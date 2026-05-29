@@ -86,6 +86,14 @@ function CustomDrawerContent(props: any) {
   const { state, descriptors, navigation } = props;
   return (
     <DrawerContentScrollView {...props} style={{ paddingTop: 0 }}>
+      <View style={{ padding: Layout.spacing.xl, paddingTop: 48, alignItems: 'center' }}>
+        <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: Layout.spacing.sm }}>
+          <Text style={{ color: '#FFF', fontSize: 20, fontWeight: '700' }}>M</Text>
+        </View>
+        <Text style={{ fontSize: 20, fontWeight: '700', color: '#FFF' }}>工具集</Text>
+        <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>我的日常助手</Text>
+      </View>
+      <View style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(196, 181, 253, 0.25)', marginHorizontal: Layout.spacing.xl }} />
       {state.routes.map((route: any, i: number) => {
         const focused = i === state.index;
         const { drawerLabel, title, drawerIcon } = descriptors[route.key].options;
