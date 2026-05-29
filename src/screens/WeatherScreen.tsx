@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, TextInput, ActivityIndicator, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import * as Location from 'expo-location';
 import { colors, spacing, fontSize } from '../theme';
@@ -15,12 +15,9 @@ export function WeatherScreen() {
   const [searchText, setSearchText] = useState('');
   const [savedLocations, setSavedLocations] = useState<string[]>([]);
 
-  useEffect(() => {
-    loadLocations().then(setSavedLocations);
-    loadWeather();
-  }, []);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const loadWeather = async () => {
+  const loadWeather = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -50,7 +47,31 @@ export function WeatherScreen() {
       setError(e.message || '获取天气失败，请尝试搜索城市');
     }
     setLoading(false);
-  };
+  }, []);
+
+  // 每半小时自动重定位，对齐系统时间（:00/:30）
+  useEffect(() => {
+    loadLocations().then(setSavedLocations);
+    loadWeather();
+
+    const msUntilHalfHour = () => {
+      const now = new Date();
+      const next = now.getMinutes() < 30
+        ? new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), 30, 0, 0)
+        : new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1, 0, 0, 0);
+      return next.getTime() - now.getTime();
+    };
+
+    const timeout = setTimeout(() => {
+      loadWeather();
+      timerRef.current = setInterval(loadWeather, 30 * 60 * 1000);
+    }, msUntilHalfHour());
+
+    return () => {
+      clearTimeout(timeout);
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [loadWeather]);
 
   const searchCity = async (city: string) => {
     if (!city.trim()) return;
@@ -112,6 +133,9 @@ export function WeatherScreen() {
           onSubmitEditing={() => searchCity(searchText)}
           returnKeyType="search"
         />
+        <TouchableOpacity style={styles.refreshBtn} onPress={loadWeather}>
+          <Text style={styles.refreshBtnText}>⟳</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.searchBtn} onPress={() => searchCity(searchText)} disabled={searching}>
           <Text style={styles.searchBtnText}>{searching ? '...' : '搜索'}</Text>
         </TouchableOpacity>
@@ -222,6 +246,12 @@ const styles = StyleSheet.create({
     borderRadius: 10, alignItems: 'center', justifyContent: 'center',
   },
   searchBtnText: { color: colors.white, fontWeight: '600', fontSize: fontSize.sm },
+  refreshBtn: {
+    width: 40, height: 40, borderRadius: 10, backgroundColor: colors.white,
+    borderWidth: 1, borderColor: colors.border,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  refreshBtnText: { fontSize: 18, color: colors.primary },
 
   chipsRow: { marginBottom: spacing.sm },
   chip: {

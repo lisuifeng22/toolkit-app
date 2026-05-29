@@ -47,7 +47,7 @@ function NotesStackScreen() {
     <NotesStack.Navigator screenOptions={{ headerStyle: { backgroundColor: colors.white }, headerTintColor: colors.text }}>
       <NotesStack.Screen name="NotesList" component={NotesScreen} options={({ navigation }) => ({
         title: '便签',
-        headerLeft: () => <MenuButton navigation={navigation} />,
+        headerLeft: () => <BackButton navigation={navigation} />,
       })} />
       <NotesStack.Screen name="NoteEditor" component={NoteEditorScreen} options={{ title: '编辑便签' }} />
     </NotesStack.Navigator>
@@ -59,7 +59,7 @@ function TodosStackScreen() {
     <TodosStack.Navigator screenOptions={{ headerStyle: { backgroundColor: colors.white }, headerTintColor: colors.text }}>
       <TodosStack.Screen name="TodosList" component={TodosScreen} options={({ navigation }) => ({
         title: '待办',
-        headerLeft: () => <MenuButton navigation={navigation} />,
+        headerLeft: () => <BackButton navigation={navigation} />,
       })} />
       <TodosStack.Screen name="TodoEditor" component={TodoEditorScreen} options={{ title: '编辑待办' }} />
     </TodosStack.Navigator>
@@ -71,7 +71,7 @@ function CountdownStackScreen() {
     <CountdownStack.Navigator screenOptions={{ headerStyle: { backgroundColor: colors.white }, headerTintColor: colors.text }}>
       <CountdownStack.Screen name="CountdownsList" component={CountdownsScreen} options={({ navigation }) => ({
         title: '倒计时',
-        headerLeft: () => <MenuButton navigation={navigation} />,
+        headerLeft: () => <BackButton navigation={navigation} />,
       })} />
       <CountdownStack.Screen name="CountdownEditor" component={CountdownEditorScreen} options={{ title: '新建倒计时' }} />
     </CountdownStack.Navigator>

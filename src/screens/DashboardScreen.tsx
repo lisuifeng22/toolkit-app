@@ -72,6 +72,10 @@ export function DashboardScreen({ navigation }: Props) {
 
   const completedTodos = todos.filter(t => t.completed).length;
   const todoProgress = todos.length > 0 ? Math.round((completedTodos / todos.length) * 100) : 0;
+  const earliestUncompleted = todos
+    .filter(t => !t.completed)
+    .sort((a, b) => a.createdAt - b.createdAt)
+    .slice(0, 4);
 
   const nearestCountdown = countdowns
     .map(c => ({ ...c, days: getDaysRemaining(c.targetDate) }))
@@ -137,7 +141,7 @@ export function DashboardScreen({ navigation }: Props) {
         {/* Todos Card */}
         <Card
           onPress={() => navigation.navigate('Todos')}
-          style={styles.halfCard}
+          style={styles.todoCard}
         >
           <Text style={[styles.cardLabel, { color: colors.info }]}>✅ 待办</Text>
           <Text style={styles.todoCount}>已完成 {completedTodos}/{todos.length}</Text>
@@ -145,6 +149,12 @@ export function DashboardScreen({ navigation }: Props) {
             <View style={[styles.progressFill, { width: `${todoProgress}%` }]} />
           </View>
           <Text style={styles.footer}>{todoProgress}%</Text>
+          {earliestUncompleted.map(t => (
+            <View key={t.id} style={styles.todoItem}>
+              <Text style={styles.todoBullet}>·</Text>
+              <Text style={styles.todoTitle} numberOfLines={1}>{t.title}</Text>
+            </View>
+          ))}
         </Card>
       </View>
 
@@ -202,16 +212,15 @@ export function DashboardScreen({ navigation }: Props) {
         </Card>
 
         {/* Password Card */}
-        <View style={{ flex: 1 }}>
-          <Card
-            onPress={() => navigation.navigate('Password')}
-            color={colors.purpleLight}
-          >
-          <Text style={[styles.cardLabelSm, { color: colors.purple, textAlign: 'center' }]}>🔒 密码本</Text>
-          <Text style={styles.lockedText}>已锁定</Text>
-          <Text style={styles.footer}>点击验证</Text>
+        <Card
+          onPress={() => navigation.navigate('Password')}
+          style={styles.partCard}
+          color={colors.purpleLight}
+        >
+          <Text style={[styles.cardLabelSm, { color: colors.purple }]}>🔒 密码本</Text>
+          <Text style={styles.numberMd}>已锁定</Text>
+          <Text style={styles.eventLabelSm}>点击验证</Text>
         </Card>
-      </View>
       </View>
     </ScrollView>
   );
@@ -247,6 +256,7 @@ const styles = StyleSheet.create({
   cardLabelSm: { fontSize: fontSize.xs, fontWeight: '600', marginBottom: spacing.xs },
   preview: { fontSize: fontSize.sm, color: colors.textSecondary, lineHeight: 18, flex: 1 },
   footer: { fontSize: fontSize.xs, color: colors.textDisabled, marginTop: spacing.xs },
+  todoCard: { flex: 1, minHeight: 160, justifyContent: 'flex-start', paddingTop: spacing.md },
   todoCount: { fontSize: fontSize.sm, color: colors.textSecondary },
   progressBar: {
     height: 5, backgroundColor: colors.border, borderRadius: 3,
@@ -258,5 +268,7 @@ const styles = StyleSheet.create({
   eventLabel: { fontSize: fontSize.sm, color: colors.textSecondary },
   eventLabelSm: { fontSize: fontSize.xs, color: colors.textTertiary },
   emptyHint: { fontSize: fontSize.sm, color: colors.textDisabled, marginTop: spacing.sm },
-  lockedText: { fontSize: fontSize.sm, color: colors.textTertiary, textAlign: 'center' },
+  todoItem: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs },
+  todoBullet: { fontSize: fontSize.lg, color: colors.info, marginRight: 4, lineHeight: 18 },
+  todoTitle: { fontSize: fontSize.xs, color: colors.textSecondary, flex: 1 },
 });
