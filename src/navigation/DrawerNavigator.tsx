@@ -112,12 +112,12 @@ export default function DrawerNavigator() {
       })}
     >
       <Drawer.Screen name="Dashboard" component={HomeScreen}
-        options={{
+        options={({ navigation }) => ({
           title: '首页',
           drawerLabel: '首页',
           drawerIcon: () => <DrawerIcon emoji="🏠" />,
           headerLeft: () => <MenuButton navigation={navigation} />,
-        }} />
+        })} />
       <Drawer.Screen name="Notes" component={NotesStackScreen}
         options={{
           title: '便签', drawerLabel: '便签', headerShown: false,
