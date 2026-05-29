@@ -53,7 +53,7 @@ export function AnniversariesScreen() {
       </View>
       <View style={styles.cardBody}>
         <Text style={styles.titleText}>{item.title}</Text>
-        <Text style={styles.dateText}>已 {item.since} 天</Text>
+        <Text style={styles.dateText}>{item.date} · 已 {item.since} 天</Text>
       </View>
       <View style={styles.daysBox}>
         <Text style={styles.daysNum}>{item.days}</Text>
