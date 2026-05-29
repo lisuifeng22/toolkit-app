@@ -1,6 +1,6 @@
 import React from 'react';
-import { Text, TouchableOpacity, View, Platform } from 'react-native';
-import { createDrawerNavigator } from '@react-navigation/drawer';
+import { Text, TouchableOpacity, View, Platform, StyleSheet } from 'react-native';
+import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Colors, Layout } from '../constants/Colors';
 
@@ -82,21 +82,46 @@ function DrawerIcon({ emoji }: { emoji: string }) {
   );
 }
 
+function CustomDrawerContent(props: any) {
+  const { state, descriptors, navigation } = props;
+  return (
+    <DrawerContentScrollView {...props} style={{ paddingTop: 0 }}>
+      {state.routes.map((route: any, i: number) => {
+        const focused = i === state.index;
+        const { drawerLabel, title, drawerIcon } = descriptors[route.key].options;
+        const label = drawerLabel ?? title ?? route.name;
+        return (
+          <React.Fragment key={route.key}>
+            {i > 0 && (
+              <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(196, 181, 253, 0.25)', marginHorizontal: Layout.spacing.xl, marginVertical: 3 }} />
+            )}
+            <DrawerItem
+              label={label}
+              icon={drawerIcon}
+              focused={focused}
+              activeTintColor="#FFF"
+              inactiveTintColor="rgba(255,255,255,0.7)"
+              activeBackgroundColor="rgba(255,255,255,0.15)"
+              labelStyle={{ fontSize: 14, fontWeight: '500' }}
+              onPress={() => navigation.navigate(route.name)}
+              style={{ borderRadius: Layout.radius.base, marginHorizontal: Layout.spacing.sm }}
+            />
+          </React.Fragment>
+        );
+      })}
+    </DrawerContentScrollView>
+  );
+}
+
 export default function DrawerNavigator() {
   return (
     <Drawer.Navigator
+      drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={({ navigation }) => ({
         drawerStyle: {
           backgroundColor: 'rgba(124, 58, 237, 0.92)',
           width: 240,
         },
-        drawerItemStyle: {
-          borderRadius: Layout.radius.base,
-          marginHorizontal: Layout.spacing.sm,
-        },
-        drawerActiveBackgroundColor: 'rgba(255,255,255,0.15)',
-        drawerActiveTintColor: '#FFF',
-        drawerInactiveTintColor: 'rgba(255,255,255,0.7)',
         headerStyle: {
           backgroundColor: Colors.card,
           elevation: 0,
