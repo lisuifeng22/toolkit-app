@@ -1,17 +1,17 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
-import { colors, spacing, fontSize } from '../theme';
+import { Colors, Layout } from '../constants/Colors';
 
 const menuItems = [
-  { label: '首页', icon: '🏠', route: 'Dashboard', color: colors.primaryLight },
-  { label: '天气', icon: '☀️', route: 'Weather', color: colors.secondaryLight },
-  { label: '便签', icon: '📝', route: 'Notes', color: colors.successLight },
-  { label: '待办', icon: '✅', route: 'Todos', color: colors.infoLight },
-  { label: '倒计时', icon: '⏱', route: 'Countdowns', color: colors.successLight },
-  { label: '生日', icon: '🎂', route: 'Birthdays', color: colors.warningLight },
-  { label: '纪念日', icon: '❤️', route: 'Anniversaries', color: colors.purpleLight },
-  { label: '密码本', icon: '🔒', route: 'Password', color: colors.purpleLight },
+  { label: '首页', icon: '🏠', route: 'Dashboard' },
+  { label: '天气', icon: '☀️', route: 'Weather' },
+  { label: '便签', icon: '📝', route: 'Notes' },
+  { label: '待办', icon: '✅', route: 'Todos' },
+  { label: '倒计时', icon: '⏱', route: 'Countdowns' },
+  { label: '生日', icon: '🎂', route: 'Birthdays' },
+  { label: '纪念日', icon: '❤️', route: 'Anniversaries' },
+  { label: '密码本', icon: '🔒', route: 'Password' },
 ];
 
 export function DrawerContent(props: DrawerContentComponentProps) {
@@ -35,10 +35,9 @@ export function DrawerContent(props: DrawerContentComponentProps) {
               key={item.route}
               style={[styles.menuItem, isActive && styles.menuItemActive]}
               onPress={() => navigation.navigate(item.route as any)}
+              activeOpacity={0.7}
             >
-              <View style={[styles.iconBox, { backgroundColor: item.color }]}>
-                <Text style={styles.icon}>{item.icon}</Text>
-              </View>
+              <Text style={styles.icon}>{item.icon}</Text>
               <Text style={[styles.menuLabel, isActive && styles.menuLabelActive]}>
                 {item.label}
               </Text>
@@ -51,30 +50,32 @@ export function DrawerContent(props: DrawerContentComponentProps) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  header: { padding: spacing.xl, paddingTop: 48, backgroundColor: colors.primaryLight },
-  avatar: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: colors.primary,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: spacing.md,
+  container: { flex: 1 },
+  header: {
+    padding: Layout.spacing.xl,
+    paddingTop: 48,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
-  avatarText: { color: colors.white, fontSize: 18, fontWeight: '600' },
-  appName: { fontSize: fontSize.xl, fontWeight: '700', color: colors.primary },
-  subtitle: { fontSize: fontSize.sm, color: colors.textTertiary, marginTop: 2 },
-  menu: { padding: spacing.md },
+  avatar: {
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: Layout.spacing.sm,
+  },
+  avatarText: { color: Colors.sidebarText, fontSize: 20, fontWeight: '700' },
+  appName: { fontSize: 20, fontWeight: '700', color: Colors.sidebarText },
+  subtitle: { fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 },
+  menu: { padding: Layout.spacing.sm, paddingTop: Layout.spacing.md },
   menuItem: {
     flexDirection: 'row', alignItems: 'center',
-    paddingVertical: spacing.md, paddingHorizontal: spacing.md,
-    borderRadius: 12, marginBottom: 2,
+    paddingVertical: 12, paddingHorizontal: Layout.spacing.md,
+    borderRadius: Layout.radius.base,
+    marginBottom: 2,
   },
-  menuItemActive: { backgroundColor: colors.primaryLight },
-  iconBox: {
-    width: 36, height: 36, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  icon: { fontSize: 18 },
-  menuLabel: { fontSize: fontSize.md, color: colors.text, fontWeight: '500' },
-  menuLabelActive: { color: colors.primary, fontWeight: '600' },
+  menuItemActive: { backgroundColor: 'rgba(255,255,255,0.15)' },
+  icon: { fontSize: 18, marginRight: Layout.spacing.md },
+  menuLabel: { fontSize: 15, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
+  menuLabelActive: { color: Colors.sidebarText, fontWeight: '600' },
 });

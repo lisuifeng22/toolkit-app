@@ -2,15 +2,15 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { colors, spacing, fontSize } from '../theme';
+import { Colors, Layout } from '../constants/Colors';
 import { loadNotes, deleteNote } from '../storage/notes';
 import { Note } from '../types';
 
 const colorMap: Record<string, string> = {
-  '#FF6F00': colors.secondaryLight,
-  '#2E7D32': colors.successLight,
-  '#6A1B9A': colors.purpleLight,
-  '#1565C0': colors.infoLight,
+  '#FF6F00': Colors.primaryLighter,
+  '#2E7D32': Colors.primaryLighter,
+  '#6A1B9A': Colors.primaryLighter,
+  '#1565C0': Colors.primaryLighter,
 };
 
 export function NotesScreen() {
@@ -31,8 +31,8 @@ export function NotesScreen() {
 
   const renderItem = ({ item }: { item: Note }) => (
     <TouchableOpacity
-      style={[styles.noteCard, { backgroundColor: colorMap[item.colorTag] || colors.white }]}
-      activeOpacity={0.7}
+      style={styles.noteCard}
+      activeOpacity={0.8}
       onPress={() => navigation.navigate('NoteEditor', { noteId: item.id })}
       onLongPress={() => handleDelete(item.id)}
     >
@@ -52,10 +52,11 @@ export function NotesScreen() {
         numColumns={2}
         columnWrapperStyle={styles.row}
         contentContainerStyle={notes.length === 0 ? styles.empty : styles.list}
-        ListEmptyComponent={<Text style={styles.emptyText}>暂无便签{'\n'}点击右上角 + 添加</Text>}
+        ListEmptyComponent={<Text style={styles.emptyText}>暂无便签{'\n'}点击右下角 + 添加</Text>}
       />
       <TouchableOpacity
         style={styles.fab}
+        activeOpacity={0.8}
         onPress={() => navigation.navigate('NoteEditor', {})}
       >
         <Text style={styles.fabText}>+</Text>
@@ -65,27 +66,27 @@ export function NotesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  list: { padding: spacing.md },
+  container: { flex: 1, backgroundColor: Colors.background },
+  list: { padding: Layout.spacing.md },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { fontSize: fontSize.sm, color: colors.textDisabled, textAlign: 'center', lineHeight: 22 },
-  row: { gap: spacing.md, marginBottom: spacing.md },
+  emptyText: { fontSize: 14, color: Colors.textPlaceholder, textAlign: 'center', lineHeight: 22 },
+  row: { gap: Layout.spacing.md, marginBottom: Layout.spacing.md },
   noteCard: {
     flex: 1,
-    borderRadius: 16, padding: spacing.lg,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04, shadowRadius: 3, elevation: 2,
+    backgroundColor: Colors.card,
+    borderRadius: Layout.radius.large,
+    padding: Layout.spacing.md,
     minHeight: 100,
+    ...Layout.shadow.light,
   },
-  noteContent: { fontSize: fontSize.sm, color: colors.text, lineHeight: 20, flex: 1 },
-  noteDate: { fontSize: fontSize.xs, color: colors.textDisabled, marginTop: spacing.sm },
+  noteContent: { fontSize: 14, color: Colors.textPrimary, lineHeight: 20, flex: 1 },
+  noteDate: { fontSize: 12, color: Colors.textPlaceholder, marginTop: Layout.spacing.sm },
   fab: {
     position: 'absolute', bottom: 24, right: 24,
     width: 52, height: 52, borderRadius: 26,
-    backgroundColor: colors.primary,
+    backgroundColor: Colors.primary,
     alignItems: 'center', justifyContent: 'center',
-    elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2, shadowRadius: 4,
+    ...Layout.shadow.hover,
   },
-  fabText: { fontSize: 28, color: colors.white, lineHeight: 30 },
+  fabText: { fontSize: 28, color: '#fff', lineHeight: 30 },
 });

@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { colors, spacing, fontSize } from '../theme';
+import { Colors, Layout } from '../constants/Colors';
 import { loadCountdowns, deleteCountdown } from '../storage/countdowns';
 import { getDaysRemaining } from '../utils/dates';
 import { Countdown } from '../types';
@@ -29,7 +29,7 @@ export function CountdownsScreen() {
   const renderItem = ({ item }: { item: Countdown & { days: number } }) => (
     <TouchableOpacity
       style={styles.card}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
       onLongPress={() => handleDelete(item.id)}
     >
       <Text style={styles.days}>{item.days}</Text>
@@ -50,7 +50,7 @@ export function CountdownsScreen() {
         contentContainerStyle={items.length === 0 ? styles.empty : styles.list}
         ListEmptyComponent={<Text style={styles.emptyText}>暂无倒计时{'\n'}点击右下角 + 添加</Text>}
       />
-      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('CountdownEditor', {})}>
+      <TouchableOpacity style={styles.fab} activeOpacity={0.8} onPress={() => navigation.navigate('CountdownEditor', {})}>
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
     </View>
@@ -58,26 +58,29 @@ export function CountdownsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  list: { padding: spacing.lg },
+  container: { flex: 1, backgroundColor: Colors.background },
+  list: { padding: Layout.spacing.md },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { fontSize: fontSize.sm, color: colors.textDisabled, textAlign: 'center', lineHeight: 22 },
+  emptyText: { fontSize: 14, color: Colors.textPlaceholder, textAlign: 'center', lineHeight: 22 },
   card: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: colors.white, borderRadius: 16,
-    padding: spacing.lg, marginBottom: spacing.md,
+    backgroundColor: Colors.card,
+    borderRadius: Layout.radius.large,
+    padding: Layout.spacing.md,
+    marginBottom: Layout.spacing.md,
+    ...Layout.shadow.light,
   },
-  days: { fontSize: 36, fontWeight: '700', color: colors.success, width: 60, textAlign: 'center' },
-  daysLabel: { fontSize: fontSize.sm, color: colors.textTertiary, marginRight: spacing.md },
+  days: { fontSize: 36, fontWeight: '700', color: Colors.primary, width: 60, textAlign: 'center' },
+  daysLabel: { fontSize: 14, color: Colors.textSecondary, marginRight: Layout.spacing.md },
   cardRight: { flex: 1 },
-  title: { fontSize: fontSize.md, fontWeight: '500', color: colors.text },
-  target: { fontSize: fontSize.xs, color: colors.textTertiary, marginTop: 2 },
+  title: { fontSize: 16, fontWeight: '500', color: Colors.textPrimary },
+  target: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
   fab: {
     position: 'absolute', bottom: 24, right: 24,
     width: 52, height: 52, borderRadius: 26,
-    backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center',
-    elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2, shadowRadius: 4,
+    backgroundColor: Colors.primary,
+    alignItems: 'center', justifyContent: 'center',
+    ...Layout.shadow.hover,
   },
-  fabText: { fontSize: 28, color: colors.white, lineHeight: 30 },
+  fabText: { fontSize: 28, color: '#fff', lineHeight: 30 },
 });

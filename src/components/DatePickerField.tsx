@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { colors, spacing, fontSize } from '../theme';
+import { Colors, Layout } from '../constants/Colors';
 
 let DateTimePicker: any = () => null;
 if (Platform.OS !== 'web') {
@@ -42,15 +42,15 @@ export function DatePickerField({ value, onChange, mode = 'date', label }: Props
             if (val) onChange(new Date(val + 'T00:00:00'));
           }}
           style={{
-            width: '100%', height: 48, borderRadius: 12, padding: 12,
-            fontSize: 16, border: `1px solid ${colors.border}`,
-            backgroundColor: colors.white, color: colors.text,
+            width: '100%', height: 48, borderRadius: Layout.radius.base, padding: 12,
+            fontSize: 16, border: `1px solid ${Colors.border}`,
+            backgroundColor: Colors.card, color: Colors.textPrimary,
             outline: 'none', boxSizing: 'border-box',
           }}
         />
       ) : (
         <>
-          <TouchableOpacity style={styles.pickerBtn} onPress={() => setShow(true)}>
+          <TouchableOpacity style={styles.pickerBtn} onPress={() => setShow(true)} activeOpacity={0.8}>
             <Text style={styles.pickerText}>{formatDate(value)}</Text>
             <Text style={styles.pickerIcon}>{mode === 'date' ? '📅' : '⏰'}</Text>
           </TouchableOpacity>
@@ -71,9 +71,10 @@ export function DatePickerField({ value, onChange, mode = 'date', label }: Props
 const styles = StyleSheet.create({
   pickerBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: colors.white, borderRadius: 12,
-    padding: spacing.md, marginBottom: spacing.sm,
+    backgroundColor: Colors.card, borderRadius: Layout.radius.large,
+    padding: Layout.spacing.md, marginBottom: Layout.spacing.sm,
+    ...Layout.shadow.light,
   },
-  pickerText: { fontSize: fontSize.md, color: colors.text },
+  pickerText: { fontSize: 16, color: Colors.textPrimary },
   pickerIcon: { fontSize: 16 },
 });

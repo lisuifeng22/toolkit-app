@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { colors, spacing, fontSize } from '../theme';
+import { Colors, Layout } from '../constants/Colors';
 import { loadTodos, toggleTodo, deleteTodo } from '../storage/todos';
 import { Todo } from '../types';
 
@@ -30,12 +30,13 @@ export function TodosScreen() {
   const renderItem = ({ item }: { item: Todo }) => (
     <TouchableOpacity
       style={styles.todoCard}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
       onLongPress={() => handleDelete(item.id)}
     >
       <TouchableOpacity
         style={[styles.checkbox, item.completed && styles.checkboxDone]}
         onPress={() => handleToggle(item.id)}
+        activeOpacity={0.8}
       >
         {item.completed && <Text style={styles.checkmark}>✓</Text>}
       </TouchableOpacity>
@@ -74,6 +75,7 @@ export function TodosScreen() {
 
       <TouchableOpacity
         style={styles.fab}
+        activeOpacity={0.8}
         onPress={() => navigation.navigate('TodoEditor', {})}
       >
         <Text style={styles.fabText}>+</Text>
@@ -83,44 +85,50 @@ export function TodosScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  list: { padding: spacing.lg },
+  container: { flex: 1, backgroundColor: Colors.background },
+  list: { padding: Layout.spacing.md },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { fontSize: fontSize.sm, color: colors.textDisabled, textAlign: 'center', lineHeight: 22 },
+  emptyText: { fontSize: 14, color: Colors.textPlaceholder, textAlign: 'center', lineHeight: 22 },
   progressCard: {
-    backgroundColor: colors.white, borderRadius: 16,
-    margin: spacing.lg, marginBottom: 0, padding: spacing.lg,
+    backgroundColor: Colors.card,
+    borderRadius: Layout.radius.large,
+    margin: Layout.spacing.md, marginBottom: 0,
+    padding: Layout.spacing.md,
+    ...Layout.shadow.light,
   },
-  progressText: { fontSize: fontSize.sm, fontWeight: '600', color: colors.text },
+  progressText: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
   progressBar: {
-    height: 6, backgroundColor: colors.border, borderRadius: 3,
-    marginTop: spacing.sm, overflow: 'hidden',
+    height: 8, backgroundColor: Colors.gray, borderRadius: 4,
+    marginTop: Layout.spacing.sm, overflow: 'hidden',
   },
-  progressFill: { height: '100%', backgroundColor: colors.info, borderRadius: 3 },
-  progressCount: { fontSize: fontSize.xs, color: colors.textTertiary, marginTop: spacing.xs, textAlign: 'right' },
+  progressFill: { height: '100%', backgroundColor: Colors.primary, borderRadius: 4 },
+  progressCount: { fontSize: 12, color: Colors.textSecondary, marginTop: Layout.spacing.xs, textAlign: 'right' },
   todoCard: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: colors.white, borderRadius: 12,
-    padding: spacing.lg, marginBottom: spacing.sm,
+    backgroundColor: Colors.card,
+    borderRadius: Layout.radius.large,
+    padding: Layout.spacing.md,
+    marginBottom: Layout.spacing.sm,
+    ...Layout.shadow.light,
   },
   checkbox: {
     width: 24, height: 24, borderRadius: 12,
-    borderWidth: 2, borderColor: colors.info,
+    borderWidth: 2, borderColor: Colors.primary,
     alignItems: 'center', justifyContent: 'center',
-    marginRight: spacing.md,
+    marginRight: Layout.spacing.md,
   },
-  checkboxDone: { backgroundColor: colors.info },
-  checkmark: { color: colors.white, fontSize: 14, fontWeight: '700' },
+  checkboxDone: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  checkmark: { color: '#fff', fontSize: 14, fontWeight: '700' },
   todoContent: { flex: 1 },
-  todoTitle: { fontSize: fontSize.md, color: colors.text },
-  todoDone: { textDecorationLine: 'line-through', color: colors.textDisabled },
-  dueDate: { fontSize: fontSize.xs, color: colors.textTertiary, marginTop: 2 },
+  todoTitle: { fontSize: 16, color: Colors.textPrimary },
+  todoDone: { textDecorationLine: 'line-through', color: Colors.textPlaceholder },
+  dueDate: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
   fab: {
     position: 'absolute', bottom: 24, right: 24,
     width: 52, height: 52, borderRadius: 26,
-    backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center',
-    elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2, shadowRadius: 4,
+    backgroundColor: Colors.primary,
+    alignItems: 'center', justifyContent: 'center',
+    ...Layout.shadow.hover,
   },
-  fabText: { fontSize: 28, color: colors.white, lineHeight: 30 },
+  fabText: { fontSize: 28, color: '#fff', lineHeight: 30 },
 });

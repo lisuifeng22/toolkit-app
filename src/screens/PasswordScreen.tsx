@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, TextInput } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { colors, spacing, fontSize } from '../theme';
+import { Colors, Layout } from '../constants/Colors';
 import { loadPasswords, addPassword, deletePassword, getPinHash } from '../storage/passwords';
 import { PinSetupScreen } from './PinSetupScreen';
 import { PinVerifyScreen } from './PinVerifyScreen';
@@ -60,14 +60,14 @@ export function PasswordScreen() {
   if (state === 'check') return <PinVerifyScreen onVerified={handleVerified} />;
 
   const renderItem = ({ item }: { item: Password }) => (
-    <TouchableOpacity style={styles.card} activeOpacity={0.7} onLongPress={() => handleDelete(item.id)}>
+    <TouchableOpacity style={styles.card} activeOpacity={0.8} onLongPress={() => handleDelete(item.id)}>
       <View style={styles.siteIcon}>
         <Text style={styles.siteLetter}>{item.siteName[0]}</Text>
       </View>
       <View style={styles.cardBody}>
         <Text style={styles.siteName}>{item.siteName}</Text>
         <Text style={styles.username}>{item.username || '无用户名'}</Text>
-        <TouchableOpacity onPress={() => setRevealed(prev => ({ ...prev, [item.id]: !prev[item.id] }))}>
+        <TouchableOpacity onPress={() => setRevealed(prev => ({ ...prev, [item.id]: !prev[item.id] }))} activeOpacity={0.8}>
           <Text style={styles.passwordText}>
             {revealed[item.id] ? item.password : '••••••••'}
           </Text>
@@ -88,20 +88,20 @@ export function PasswordScreen() {
 
       {showAdd ? (
         <View style={styles.addForm}>
-          <TextInput style={styles.input} placeholder="网站/应用名" value={siteName} onChangeText={setSiteName} />
-          <TextInput style={styles.input} placeholder="用户名" value={username} onChangeText={setUsername} />
-          <TextInput style={styles.input} placeholder="密码" value={password} onChangeText={setPassword} secureTextEntry />
+          <TextInput style={styles.input} placeholder="网站/应用名" placeholderTextColor={Colors.textPlaceholder} value={siteName} onChangeText={setSiteName} />
+          <TextInput style={styles.input} placeholder="用户名" placeholderTextColor={Colors.textPlaceholder} value={username} onChangeText={setUsername} />
+          <TextInput style={styles.input} placeholder="密码" placeholderTextColor={Colors.textPlaceholder} value={password} onChangeText={setPassword} secureTextEntry />
           <View style={styles.formBtns}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowAdd(false)}>
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowAdd(false)} activeOpacity={0.8}>
               <Text style={styles.cancelText}>取消</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.addBtn} onPress={handleAdd}>
+            <TouchableOpacity style={styles.addBtn} onPress={handleAdd} activeOpacity={0.8}>
               <Text style={styles.addBtnText}>保存</Text>
             </TouchableOpacity>
           </View>
         </View>
       ) : (
-        <TouchableOpacity style={styles.fab} onPress={() => setShowAdd(true)}>
+        <TouchableOpacity style={styles.fab} onPress={() => setShowAdd(true)} activeOpacity={0.8}>
           <Text style={styles.fabText}>+</Text>
         </TouchableOpacity>
       )}
@@ -110,52 +110,59 @@ export function PasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  list: { padding: spacing.lg },
+  container: { flex: 1, backgroundColor: Colors.background },
+  list: { padding: Layout.spacing.md },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { fontSize: fontSize.sm, color: colors.textDisabled },
+  emptyText: { fontSize: 14, color: Colors.textPlaceholder },
   card: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: colors.white, borderRadius: 16,
-    padding: spacing.lg, marginBottom: spacing.md,
+    backgroundColor: Colors.card,
+    borderRadius: Layout.radius.large,
+    padding: Layout.spacing.md,
+    marginBottom: Layout.spacing.md,
+    ...Layout.shadow.light,
   },
   siteIcon: {
-    width: 44, height: 44, borderRadius: 12,
-    backgroundColor: colors.purpleLight, alignItems: 'center', justifyContent: 'center',
-    marginRight: spacing.md,
+    width: 44, height: 44, borderRadius: Layout.radius.small,
+    backgroundColor: Colors.primaryLighter,
+    alignItems: 'center', justifyContent: 'center',
+    marginRight: Layout.spacing.md,
   },
-  siteLetter: { fontSize: fontSize.lg, fontWeight: '600', color: colors.purple },
+  siteLetter: { fontSize: 18, fontWeight: '600', color: Colors.primary },
   cardBody: { flex: 1 },
-  siteName: { fontSize: fontSize.md, fontWeight: '500', color: colors.text },
-  username: { fontSize: fontSize.sm, color: colors.textTertiary, marginTop: 2 },
-  passwordText: { fontSize: fontSize.sm, color: colors.info, marginTop: 2 },
+  siteName: { fontSize: 16, fontWeight: '500', color: Colors.textPrimary },
+  username: { fontSize: 14, color: Colors.textSecondary, marginTop: 2 },
+  passwordText: { fontSize: 14, color: Colors.info, marginTop: 2 },
   addForm: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    padding: spacing.lg, shadowColor: '#000', shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1, shadowRadius: 8, elevation: 10,
+    backgroundColor: Colors.card,
+    borderTopLeftRadius: Layout.radius.large,
+    borderTopRightRadius: Layout.radius.large,
+    padding: Layout.spacing.md,
+    ...Layout.shadow.hover,
   },
   input: {
-    fontSize: fontSize.md, color: colors.text,
-    backgroundColor: colors.background, borderRadius: 12,
-    padding: spacing.md, marginBottom: spacing.sm,
+    fontSize: 16, color: Colors.textPrimary,
+    backgroundColor: Colors.gray, borderRadius: Layout.radius.base,
+    padding: Layout.spacing.md, marginBottom: Layout.spacing.sm,
   },
-  formBtns: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
+  formBtns: { flexDirection: 'row', gap: Layout.spacing.md, marginTop: Layout.spacing.sm },
   cancelBtn: {
-    flex: 1, padding: spacing.md, borderRadius: 12,
-    backgroundColor: colors.background, alignItems: 'center',
+    flex: 1, padding: Layout.spacing.md, borderRadius: Layout.radius.base,
+    backgroundColor: Colors.gray, alignItems: 'center',
   },
-  cancelText: { color: colors.textSecondary },
+  cancelText: { color: Colors.textSecondary },
   addBtn: {
-    flex: 1, padding: spacing.md, borderRadius: 12,
-    backgroundColor: colors.primary, alignItems: 'center',
+    flex: 1, padding: Layout.spacing.md, borderRadius: Layout.radius.base,
+    backgroundColor: Colors.primary, alignItems: 'center',
   },
-  addBtnText: { color: colors.white, fontWeight: '600' },
+  addBtnText: { color: '#fff', fontWeight: '600' },
   fab: {
     position: 'absolute', bottom: 24, right: 24,
     width: 52, height: 52, borderRadius: 26,
-    backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center',
-    elevation: 4,
+    backgroundColor: Colors.primary,
+    alignItems: 'center', justifyContent: 'center',
+    ...Layout.shadow.hover,
   },
-  fabText: { fontSize: 28, color: colors.white, lineHeight: 30 },
+  fabText: { fontSize: 28, color: '#fff', lineHeight: 30 },
 });

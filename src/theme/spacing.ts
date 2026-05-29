@@ -1,24 +1,14 @@
-export const spacing = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  xxl: 24,
-};
+import { Layout } from '../constants/Colors';
 
-export const borderRadius = {
-  card: 16,
-  button: 8,
-  small: 4,
-};
+export const spacing = Layout.spacing;
+export const borderRadius = Layout.radius;
 
 export const fontSize = {
-  xs: 10,
-  sm: 12,
-  md: 14,
-  lg: 16,
-  xl: 20,
-  xxl: 24,
+  xs: 12,
+  sm: 14,
+  md: 16,
+  lg: 20,
+  xl: 24,
+  xxl: 28,
   xxxl: 32,
 };

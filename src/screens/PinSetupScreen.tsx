@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { colors, spacing, fontSize } from '../theme';
+import { Colors, Layout } from '../constants/Colors';
 import { savePinHash } from '../storage/passwords';
 
 function simpleHash(pin: string): string {
@@ -81,6 +81,7 @@ export function PinSetupScreen() {
                 key={ki}
                 style={styles.key}
                 onPress={() => key === '⌫' ? handleDelete() : handlePress(key)}
+                activeOpacity={0.8}
               >
                 <Text style={styles.keyText}>{key}</Text>
               </TouchableOpacity>
@@ -93,19 +94,19 @@ export function PinSetupScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: fontSize.xl, fontWeight: '600', color: colors.text },
-  subtitle: { fontSize: fontSize.sm, color: colors.textTertiary, marginTop: spacing.sm },
-  dots: { flexDirection: 'row', gap: spacing.lg, marginVertical: 40 },
-  dot: { width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: colors.textTertiary },
-  dotFilled: { backgroundColor: colors.primary, borderColor: colors.primary },
-  keypad: { marginTop: spacing.lg },
-  keypadRow: { flexDirection: 'row', justifyContent: 'center', gap: spacing.md, marginBottom: spacing.md },
+  container: { flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center' },
+  title: { fontSize: 24, fontWeight: '600', color: Colors.textPrimary },
+  subtitle: { fontSize: 14, color: Colors.textSecondary, marginTop: Layout.spacing.sm },
+  dots: { flexDirection: 'row', gap: Layout.spacing.xl, marginVertical: 40 },
+  dot: { width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: Colors.textPlaceholder },
+  dotFilled: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  keypad: { marginTop: Layout.spacing.lg },
+  keypadRow: { flexDirection: 'row', justifyContent: 'center', gap: Layout.spacing.md, marginBottom: Layout.spacing.md },
   key: {
     width: 72, height: 72, borderRadius: 36,
-    backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center',
-    elevation: 2,
+    backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center',
+    ...Layout.shadow.light,
   },
   keyPlaceholder: { width: 72, height: 72 },
-  keyText: { fontSize: 28, color: colors.text },
+  keyText: { fontSize: 28, color: Colors.textPrimary },
 });

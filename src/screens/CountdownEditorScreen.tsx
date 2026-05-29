@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { colors, spacing, fontSize } from '../theme';
+import { Colors, Layout } from '../constants/Colors';
 import { addCountdown } from '../storage/countdowns';
 import { DatePickerField } from '../components/DatePickerField';
 
@@ -32,12 +32,12 @@ export function CountdownEditorScreen() {
       <TextInput
         style={styles.input}
         placeholder="事件名称"
-        placeholderTextColor={colors.textDisabled}
+        placeholderTextColor={Colors.textPlaceholder}
         value={title}
         onChangeText={setTitle}
       />
       <DatePickerField value={targetDate} onChange={setTargetDate} />
-      <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
+      <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.8}>
         <Text style={styles.saveText}>保存</Text>
       </TouchableOpacity>
     </View>
@@ -45,15 +45,16 @@ export function CountdownEditorScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, padding: spacing.lg },
+  container: { flex: 1, backgroundColor: Colors.background, padding: Layout.spacing.md },
   input: {
-    fontSize: fontSize.md, color: colors.text,
-    backgroundColor: colors.white, borderRadius: 16,
-    padding: spacing.lg, marginBottom: spacing.md,
+    fontSize: 16, color: Colors.textPrimary,
+    backgroundColor: Colors.card, borderRadius: Layout.radius.large,
+    padding: Layout.spacing.md, marginBottom: Layout.spacing.md,
+    ...Layout.shadow.light,
   },
   saveBtn: {
-    backgroundColor: colors.primary, borderRadius: 12,
-    padding: spacing.md, alignItems: 'center',
+    backgroundColor: Colors.primary, borderRadius: Layout.radius.base,
+    padding: Layout.spacing.md, alignItems: 'center',
   },
-  saveText: { color: colors.white, fontSize: fontSize.md, fontWeight: '600' },
+  saveText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

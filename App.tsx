@@ -1,12 +1,12 @@
 import 'react-native-gesture-handler';
 import React from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { NavigationContainer, useNavigation } from '@react-navigation/native';
+import { NavigationContainer } from '@react-navigation/native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { View, Text, TouchableOpacity, Platform } from 'react-native';
-import { colors, fontSize } from './src/theme';
+import { Colors, Layout } from './src/constants/Colors';
 import { DrawerContent } from './src/components/DrawerContent';
 import { DashboardScreen } from './src/screens/DashboardScreen';
 import { WeatherScreen } from './src/screens/WeatherScreen';
@@ -28,7 +28,7 @@ const CountdownStack = createNativeStackNavigator();
 function MenuButton({ navigation }: any) {
   return (
     <TouchableOpacity onPress={() => navigation.toggleDrawer()} style={{ marginLeft: Platform.OS === 'web' ? 16 : 8, padding: 4 }}>
-      <Text style={{ fontSize: 22, color: colors.text }}>☰</Text>
+      <Text style={{ fontSize: 22, color: Colors.textPrimary }}>☰</Text>
     </TouchableOpacity>
   );
 }
@@ -36,7 +36,7 @@ function MenuButton({ navigation }: any) {
 function BackButton({ navigation }: any) {
   return (
     <TouchableOpacity onPress={() => navigation.navigate('Dashboard')} style={{ marginLeft: 8, padding: 4, flexDirection: 'row', alignItems: 'center' }}>
-      <Text style={{ fontSize: 22, color: colors.text, marginRight: 4 }}>‹</Text>
+      <Text style={{ fontSize: 22, color: Colors.textPrimary, marginRight: 4 }}>‹</Text>
       <MenuButton navigation={navigation} />
     </TouchableOpacity>
   );
@@ -44,7 +44,11 @@ function BackButton({ navigation }: any) {
 
 function NotesStackScreen() {
   return (
-    <NotesStack.Navigator screenOptions={{ headerStyle: { backgroundColor: colors.white }, headerTintColor: colors.text }}>
+    <NotesStack.Navigator screenOptions={{
+      headerStyle: { backgroundColor: Colors.card },
+      headerTintColor: Colors.textPrimary,
+      headerTitleStyle: { fontWeight: '600' as const, fontSize: 18 },
+    }}>
       <NotesStack.Screen name="NotesList" component={NotesScreen} options={({ navigation }) => ({
         title: '便签',
         headerLeft: () => <BackButton navigation={navigation} />,
@@ -56,7 +60,11 @@ function NotesStackScreen() {
 
 function TodosStackScreen() {
   return (
-    <TodosStack.Navigator screenOptions={{ headerStyle: { backgroundColor: colors.white }, headerTintColor: colors.text }}>
+    <TodosStack.Navigator screenOptions={{
+      headerStyle: { backgroundColor: Colors.card },
+      headerTintColor: Colors.textPrimary,
+      headerTitleStyle: { fontWeight: '600' as const, fontSize: 18 },
+    }}>
       <TodosStack.Screen name="TodosList" component={TodosScreen} options={({ navigation }) => ({
         title: '待办',
         headerLeft: () => <BackButton navigation={navigation} />,
@@ -68,7 +76,11 @@ function TodosStackScreen() {
 
 function CountdownStackScreen() {
   return (
-    <CountdownStack.Navigator screenOptions={{ headerStyle: { backgroundColor: colors.white }, headerTintColor: colors.text }}>
+    <CountdownStack.Navigator screenOptions={{
+      headerStyle: { backgroundColor: Colors.card },
+      headerTintColor: Colors.textPrimary,
+      headerTitleStyle: { fontWeight: '600' as const, fontSize: 18 },
+    }}>
       <CountdownStack.Screen name="CountdownsList" component={CountdownsScreen} options={({ navigation }) => ({
         title: '倒计时',
         headerLeft: () => <BackButton navigation={navigation} />,
@@ -82,10 +94,31 @@ function createScreenOptions(title: string, showBack = false) {
   return ({ navigation }: any) => ({
     title,
     headerLeft: () => showBack ? <BackButton navigation={navigation} /> : <MenuButton navigation={navigation} />,
-    headerStyle: { backgroundColor: colors.white },
-    headerTintColor: colors.text,
+    headerStyle: { backgroundColor: Colors.card, elevation: 0, shadowOpacity: 0 },
+    headerTintColor: Colors.textPrimary,
+    headerTitleStyle: { fontWeight: '600' as const, fontSize: 18 },
   });
 }
+
+const drawerScreenOptions = {
+  drawerStyle: {
+    backgroundColor: Colors.sidebar,
+    width: 220,
+  },
+  drawerActiveBackgroundColor: 'rgba(255,255,255,0.15)',
+  drawerActiveTintColor: Colors.sidebarText,
+  drawerInactiveTintColor: 'rgba(255,255,255,0.7)',
+  headerStyle: {
+    backgroundColor: Colors.card,
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  headerTintColor: Colors.textPrimary,
+  headerTitleStyle: {
+    fontWeight: '600' as const,
+    fontSize: 18,
+  },
+};
 
 export default function App() {
   return (
@@ -93,10 +126,7 @@ export default function App() {
       <NavigationContainer>
         <Drawer.Navigator
           drawerContent={(props) => <DrawerContent {...props} />}
-          screenOptions={{
-            headerStyle: { backgroundColor: colors.white },
-            headerTintColor: colors.text,
-          }}
+          screenOptions={drawerScreenOptions}
         >
           <Drawer.Screen name="Dashboard" component={DashboardScreen}
             options={createScreenOptions('工具集')} />

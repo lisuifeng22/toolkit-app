@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, TextInput, ActivityIndicator, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import * as Location from 'expo-location';
-import { colors, spacing, fontSize } from '../theme';
+import { Colors, Layout } from '../constants/Colors';
 import { fetchWeatherByCoords, fetchWeatherByCity, fetchWeatherByIP, getWeatherEmoji, WeatherData } from '../services/weather';
 import { loadLocations, saveLocation, removeLocation } from '../storage/weather-locations';
 
@@ -21,7 +21,6 @@ export function WeatherScreen() {
     setLoading(true);
     setError('');
     try {
-      // 先尝试 GPS 定位（国内很多设备没有 Google Play Services，会失败）
       const serviceEnabled = await Location.hasServicesEnabledAsync();
       if (serviceEnabled) {
         const { status } = await Location.requestForegroundPermissionsAsync();
@@ -35,11 +34,8 @@ export function WeatherScreen() {
           return;
         }
       }
-    } catch {
-      // GPS 失败，静默降级到 IP 定位
-    }
+    } catch {}
 
-    // 降级：通过 IP 获取位置天气
     try {
       const data = await fetchWeatherByIP();
       setWeather(data);
@@ -49,7 +45,6 @@ export function WeatherScreen() {
     setLoading(false);
   }, []);
 
-  // 每半小时自动重定位，对齐系统时间（:00/:30）
   useEffect(() => {
     loadLocations().then(setSavedLocations);
     loadWeather();
@@ -108,11 +103,10 @@ export function WeatherScreen() {
     ]);
   };
 
-  // 首次加载中
   if (loading && !weather) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={Colors.primary} />
         <Text style={styles.loadingText}>正在获取天气...</Text>
       </View>
     );
@@ -122,26 +116,24 @@ export function WeatherScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* 搜索栏 */}
       <View style={styles.searchRow}>
         <TextInput
           style={styles.searchInput}
           value={searchText}
           onChangeText={setSearchText}
           placeholder="搜索城市..."
-          placeholderTextColor={colors.textDisabled}
+          placeholderTextColor={Colors.textPlaceholder}
           onSubmitEditing={() => searchCity(searchText)}
           returnKeyType="search"
         />
-        <TouchableOpacity style={styles.refreshBtn} onPress={loadWeather}>
+        <TouchableOpacity style={styles.refreshBtn} onPress={loadWeather} activeOpacity={0.8}>
           <Text style={styles.refreshBtnText}>⟳</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.searchBtn} onPress={() => searchCity(searchText)} disabled={searching}>
+        <TouchableOpacity style={styles.searchBtn} onPress={() => searchCity(searchText)} disabled={searching} activeOpacity={0.8}>
           <Text style={styles.searchBtnText}>{searching ? '...' : '搜索'}</Text>
         </TouchableOpacity>
       </View>
 
-      {/* 收藏位置 */}
       {savedLocations.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
           {savedLocations.map(city => (
@@ -150,6 +142,7 @@ export function WeatherScreen() {
               style={[styles.chip, styles.savedChip]}
               onPress={() => searchCity(city)}
               onLongPress={() => handleRemoveLocation(city)}
+              activeOpacity={0.8}
             >
               <Text style={styles.chipText}>★ {city}</Text>
             </TouchableOpacity>
@@ -157,34 +150,27 @@ export function WeatherScreen() {
         </ScrollView>
       )}
 
-      {/* 热门城市 */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
-        <TouchableOpacity style={styles.chip} onPress={loadWeather}>
+        <TouchableOpacity style={styles.chip} onPress={loadWeather} activeOpacity={0.8}>
           <Text style={styles.chipText}>📍 当前位置</Text>
         </TouchableOpacity>
         {POPULAR_CITIES.map(city => (
-          <TouchableOpacity key={city} style={styles.chip} onPress={() => searchCity(city)}>
+          <TouchableOpacity key={city} style={styles.chip} onPress={() => searchCity(city)} activeOpacity={0.8}>
             <Text style={styles.chipText}>{city}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      {/* 错误提示 */}
-      {error ? (
-        <Text style={styles.errorText}>{error}</Text>
-      ) : null}
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-      {/* 搜索中指示器 */}
       {searching && (
-        <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: spacing.md }} />
+        <ActivityIndicator size="small" color={Colors.primary} style={{ marginVertical: Layout.spacing.md }} />
       )}
 
-      {/* 当前天气 */}
       {weather && (
         <>
           <View style={styles.currentCard}>
-            {/* 收藏按钮 */}
-            <TouchableOpacity style={styles.saveBtn} onPress={handleToggleSave}>
+            <TouchableOpacity style={styles.saveBtn} onPress={handleToggleSave} activeOpacity={0.8}>
               <Text style={styles.saveBtnText}>{isSaved ? '★ 已收藏' : '☆ 收藏'}</Text>
             </TouchableOpacity>
 
@@ -208,7 +194,6 @@ export function WeatherScreen() {
             </View>
           </View>
 
-          {/* 预报 */}
           <View style={styles.forecast}>
             <Text style={styles.sectionTitle}>未来预报</Text>
             {weather.forecast.map((day, i) => (
@@ -229,75 +214,76 @@ export function WeatherScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg, paddingBottom: 40 },
-  center: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
-  loadingText: { fontSize: fontSize.sm, color: colors.textTertiary, marginTop: spacing.md },
-  errorText: { fontSize: fontSize.sm, color: '#d32f2f', textAlign: 'center', marginBottom: spacing.sm },
+  container: { flex: 1, backgroundColor: Colors.background },
+  content: { padding: Layout.spacing.md, paddingBottom: 40 },
+  center: { flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', padding: Layout.spacing.md },
+  loadingText: { fontSize: 14, color: Colors.textSecondary, marginTop: Layout.spacing.md },
+  errorText: { fontSize: 14, color: Colors.danger, textAlign: 'center', marginBottom: Layout.spacing.sm },
 
-  searchRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
+  searchRow: { flexDirection: 'row', gap: Layout.spacing.sm, marginBottom: Layout.spacing.sm },
   searchInput: {
-    flex: 1, height: 40, borderRadius: 10, backgroundColor: colors.white,
-    paddingHorizontal: spacing.md, fontSize: fontSize.sm, color: colors.text,
-    borderWidth: 1, borderColor: colors.border,
+    flex: 1, height: 40, borderRadius: Layout.radius.base, backgroundColor: Colors.card,
+    paddingHorizontal: Layout.spacing.md, fontSize: 14, color: Colors.textPrimary,
+    borderWidth: 1, borderColor: Colors.border,
   },
   searchBtn: {
-    height: 40, paddingHorizontal: spacing.lg, backgroundColor: colors.primary,
-    borderRadius: 10, alignItems: 'center', justifyContent: 'center',
+    height: 40, paddingHorizontal: Layout.spacing.lg, backgroundColor: Colors.primary,
+    borderRadius: Layout.radius.base, alignItems: 'center', justifyContent: 'center',
   },
-  searchBtnText: { color: colors.white, fontWeight: '600', fontSize: fontSize.sm },
+  searchBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
   refreshBtn: {
-    width: 40, height: 40, borderRadius: 10, backgroundColor: colors.white,
-    borderWidth: 1, borderColor: colors.border,
+    width: 40, height: 40, borderRadius: Layout.radius.base, backgroundColor: Colors.card,
+    borderWidth: 1, borderColor: Colors.border,
     alignItems: 'center', justifyContent: 'center',
   },
-  refreshBtnText: { fontSize: 18, color: colors.primary },
+  refreshBtnText: { fontSize: 18, color: Colors.primary },
 
-  chipsRow: { marginBottom: spacing.sm },
+  chipsRow: { marginBottom: Layout.spacing.sm },
   chip: {
-    paddingHorizontal: spacing.md, paddingVertical: 6, borderRadius: 16,
-    backgroundColor: colors.white, marginRight: spacing.sm,
-    borderWidth: 1, borderColor: colors.border,
+    paddingHorizontal: Layout.spacing.md, paddingVertical: 6, borderRadius: 16,
+    backgroundColor: Colors.card, marginRight: Layout.spacing.sm,
+    borderWidth: 1, borderColor: Colors.border,
   },
-  savedChip: { backgroundColor: colors.warningLight, borderColor: colors.warning },
-  chipText: { fontSize: fontSize.xs, color: colors.textSecondary },
+  savedChip: { backgroundColor: Colors.primaryLighter, borderColor: Colors.primary },
+  chipText: { fontSize: 12, color: Colors.textSecondary },
 
   currentCard: {
-    backgroundColor: colors.secondaryLight,
-    borderRadius: 16, padding: spacing.xl,
-    alignItems: 'center', marginBottom: spacing.lg, position: 'relative',
+    backgroundColor: Colors.primaryLight,
+    borderRadius: Layout.radius.large, padding: Layout.spacing.xl,
+    alignItems: 'center', marginBottom: Layout.spacing.md,
+    ...Layout.shadow.light,
   },
   saveBtn: {
-    position: 'absolute', top: spacing.md, right: spacing.md,
-    paddingHorizontal: spacing.md, paddingVertical: 4,
-    borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.7)',
+    position: 'absolute', top: Layout.spacing.md, right: Layout.spacing.md,
+    paddingHorizontal: Layout.spacing.md, paddingVertical: 4,
+    borderRadius: Layout.radius.small, backgroundColor: 'rgba(255,255,255,0.7)',
   },
-  saveBtnText: { fontSize: fontSize.xs, color: colors.primary, fontWeight: '600' },
-  emoji: { fontSize: 48, marginBottom: spacing.sm },
-  temp: { fontSize: 48, fontWeight: '700', color: colors.primary },
-  city: { fontSize: fontSize.lg, color: colors.text, marginTop: spacing.xs },
-  desc: { fontSize: fontSize.sm, color: colors.textTertiary, marginTop: 4 },
+  saveBtnText: { fontSize: 12, color: Colors.primary, fontWeight: '600' },
+  emoji: { fontSize: 48, marginBottom: Layout.spacing.sm },
+  temp: { fontSize: 48, fontWeight: '700', color: Colors.primary },
+  city: { fontSize: 20, fontWeight: '600', color: Colors.textPrimary, marginTop: Layout.spacing.xs },
+  desc: { fontSize: 14, color: Colors.textSecondary, marginTop: 4 },
   details: {
     flexDirection: 'row', justifyContent: 'space-around',
-    width: '100%', marginTop: spacing.lg,
-    paddingTop: spacing.lg, borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.06)',
+    width: '100%', marginTop: Layout.spacing.lg,
+    paddingTop: Layout.spacing.lg, borderTopWidth: 1,
+    borderTopColor: 'rgba(124,58,237,0.15)',
   },
   detailItem: { alignItems: 'center' },
-  detailLabel: { fontSize: fontSize.sm, color: colors.textTertiary },
-  detailValue: { fontSize: fontSize.md, fontWeight: '600', color: colors.text, marginTop: 2 },
+  detailLabel: { fontSize: 14, color: Colors.textSecondary },
+  detailValue: { fontSize: 16, fontWeight: '600', color: Colors.textPrimary, marginTop: 2 },
 
-  forecast: { backgroundColor: colors.white, borderRadius: 16, padding: spacing.lg },
-  sectionTitle: { fontSize: fontSize.md, fontWeight: '600', color: colors.text, marginBottom: spacing.md },
+  forecast: { backgroundColor: Colors.card, borderRadius: Layout.radius.large, padding: Layout.spacing.md, ...Layout.shadow.light },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: Colors.textPrimary, marginBottom: Layout.spacing.md },
   forecastRow: {
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1, borderBottomColor: colors.divider,
+    paddingVertical: Layout.spacing.md,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
   },
-  forecastDay: { fontSize: fontSize.sm, color: colors.textSecondary, width: 50 },
+  forecastDay: { fontSize: 14, color: Colors.textSecondary, width: 50 },
   forecastIcon: { fontSize: 18 },
-  forecastDesc: { flex: 1, fontSize: fontSize.xs, color: colors.textTertiary, marginHorizontal: spacing.sm },
-  forecastTemp: { fontSize: fontSize.sm, color: colors.textSecondary },
-  note: { fontSize: fontSize.xs, color: colors.textDisabled, textAlign: 'center', marginTop: spacing.lg },
+  forecastDesc: { flex: 1, fontSize: 12, color: Colors.textSecondary, marginHorizontal: Layout.spacing.sm },
+  forecastTemp: { fontSize: 14, color: Colors.textSecondary },
+  note: { fontSize: 12, color: Colors.textPlaceholder, textAlign: 'center', marginTop: Layout.spacing.lg },
 });

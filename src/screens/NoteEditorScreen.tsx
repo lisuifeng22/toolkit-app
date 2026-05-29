@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { colors, spacing, fontSize } from '../theme';
+import { Colors, Layout } from '../constants/Colors';
 import { loadNotes, addNote, updateNote } from '../storage/notes';
 
-const colorOptions = ['#FF6F00', '#2E7D32', '#6A1B9A', '#1565C0'];
+const colorOptions = ['#7C3AED', '#10B981', '#F59E0B', '#3B82F6'];
 
 export function NoteEditorScreen() {
   const navigation = useNavigation();
@@ -50,7 +50,7 @@ export function NoteEditorScreen() {
         style={styles.input}
         multiline
         placeholder="写点什么..."
-        placeholderTextColor={colors.textDisabled}
+        placeholderTextColor={Colors.textPlaceholder}
         value={content}
         onChangeText={setContent}
         autoFocus
@@ -62,10 +62,11 @@ export function NoteEditorScreen() {
             key={c}
             style={[styles.colorDot, { backgroundColor: c }, colorTag === c && styles.colorDotSelected]}
             onPress={() => setColorTag(c)}
+            activeOpacity={0.8}
           />
         ))}
       </View>
-      <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
+      <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.8}>
         <Text style={styles.saveText}>保存</Text>
       </TouchableOpacity>
     </View>
@@ -73,25 +74,26 @@ export function NoteEditorScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, padding: spacing.lg },
+  container: { flex: 1, backgroundColor: Colors.background, padding: Layout.spacing.md },
   input: {
-    flex: 1, fontSize: fontSize.md,
-    color: colors.text, lineHeight: 24,
+    flex: 1, fontSize: 16,
+    color: Colors.textPrimary, lineHeight: 24,
     textAlignVertical: 'top',
-    backgroundColor: colors.white,
-    borderRadius: 16, padding: spacing.lg,
+    backgroundColor: Colors.card,
+    borderRadius: Layout.radius.large, padding: Layout.spacing.md,
+    ...Layout.shadow.light,
   },
   colorRow: {
     flexDirection: 'row', alignItems: 'center',
-    marginTop: spacing.md, marginBottom: spacing.lg,
+    marginTop: Layout.spacing.md, marginBottom: Layout.spacing.lg,
   },
-  colorLabel: { fontSize: fontSize.sm, color: colors.textSecondary, marginRight: spacing.sm },
+  colorLabel: { fontSize: 14, color: Colors.textSecondary, marginRight: Layout.spacing.sm },
   colorDot: { width: 28, height: 28, borderRadius: 14, marginHorizontal: 4 },
-  colorDotSelected: { borderWidth: 3, borderColor: colors.primary },
+  colorDotSelected: { borderWidth: 3, borderColor: Colors.primary },
   saveBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: 12, padding: spacing.md,
+    backgroundColor: Colors.primary,
+    borderRadius: Layout.radius.base, padding: Layout.spacing.md,
     alignItems: 'center',
   },
-  saveText: { color: colors.white, fontSize: fontSize.md, fontWeight: '600' },
+  saveText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

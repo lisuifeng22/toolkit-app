@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, RefreshControl } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { DrawerNavigationProp } from '@react-navigation/drawer';
-import { colors, spacing, fontSize } from '../theme';
+import { Colors, Layout } from '../constants/Colors';
 import { Card } from '../components/Card';
 import { loadNotes } from '../storage/notes';
 import { loadTodos } from '../storage/todos';
@@ -46,7 +46,6 @@ export function DashboardScreen({ navigation }: Props) {
       }
     } catch {}
 
-    // GPS 不可用时降级到 IP 定位
     try {
       const data = await fetchWeatherByIP();
       setWeather(data);
@@ -93,62 +92,69 @@ export function DashboardScreen({ navigation }: Props) {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      refreshControl={<RefreshControl
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        tintColor={Colors.primary}
+        colors={[Colors.primary]}
+      />}
     >
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>{greeting} 👋</Text>
-          <Text style={styles.date}>{dateStr}</Text>
-        </View>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>M</Text>
-        </View>
+        <Text style={styles.greeting}>{greeting} 👋</Text>
+        <Text style={styles.date}>{dateStr}</Text>
       </View>
 
-      {/* Weather Card */}
+      {/* Weather Card - 整行 */}
       <Card
         onPress={() => navigation.navigate('Weather')}
         style={styles.weatherCard}
-        color={colors.secondaryLight}
+        weather
       >
         <View style={styles.weatherRow}>
           <View>
-            <Text style={styles.cardLabel}>☀️ 天气</Text>
+            <Text style={styles.weatherLabel}>天气</Text>
             <Text style={styles.weatherTemp}>{weather ? `${weather.temp}°` : '--'}</Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={styles.weatherCity}>{weather ? weather.cityName : '定位中...'}</Text>
-            <Text style={styles.weatherDesc}>{weather ? `${getWeatherEmoji(weather.icon)} ${weather.description}` : ''}</Text>
+            <Text style={styles.weatherDesc}>
+              {weather ? `${getWeatherEmoji(weather.icon)} ${weather.description}` : ''}
+            </Text>
           </View>
         </View>
+        {weather && (
+          <View style={styles.weatherInfo}>
+            <Text style={styles.weatherText}>💧 {weather.humidity}%</Text>
+            <Text style={styles.weatherText}>🌬 {weather.windSpeed} km/h</Text>
+            <Text style={styles.weatherText}>🌡 {weather.tempMin}~{weather.tempMax}°</Text>
+          </View>
+        )}
       </Card>
 
-      {/* First Row */}
+      {/* 第一行：便签 + 待办 */}
       <View style={styles.row}>
-        {/* Notes Card */}
         <Card
           onPress={() => navigation.navigate('Notes')}
           style={styles.halfCard}
         >
-          <Text style={[styles.cardLabel, { color: colors.success }]}>📝 便签</Text>
+          <Text style={styles.cardTitle}>📝 便签</Text>
           <Text style={styles.preview} numberOfLines={2}>
             {notes.length > 0 ? notes[0].content : '暂无便签'}
           </Text>
           <Text style={styles.footer}>共 {notes.length} 条</Text>
         </Card>
 
-        {/* Todos Card */}
         <Card
           onPress={() => navigation.navigate('Todos')}
-          style={styles.todoCard}
+          style={styles.halfCard}
         >
-          <Text style={[styles.cardLabel, { color: colors.info }]}>✅ 待办</Text>
+          <Text style={styles.cardTitle}>✅ 待办</Text>
           <Text style={styles.todoCount}>已完成 {completedTodos}/{todos.length}</Text>
           <View style={styles.progressBar}>
             <View style={[styles.progressFill, { width: `${todoProgress}%` }]} />
           </View>
-          <Text style={styles.footer}>{todoProgress}%</Text>
+          <Text style={styles.progressLabel}>{todoProgress}%</Text>
           {earliestUncompleted.map(t => (
             <View key={t.id} style={styles.todoItem}>
               <Text style={styles.todoBullet}>·</Text>
@@ -158,68 +164,64 @@ export function DashboardScreen({ navigation }: Props) {
         </Card>
       </View>
 
-      {/* Second Row */}
+      {/* 第二行：倒计时 + 生日 */}
       <View style={styles.row}>
-        {/* Countdown Card */}
         <Card
           onPress={() => navigation.navigate('Countdowns')}
           style={styles.halfCard}
         >
-          <Text style={[styles.cardLabel, { color: colors.success }]}>⏱ 倒计时</Text>
+          <Text style={styles.cardTitle}>⏱ 倒计时</Text>
           {nearestCountdown ? (
             <>
               <Text style={styles.bigNumber}>{nearestCountdown.days}</Text>
               <Text style={styles.eventLabel}>距 {nearestCountdown.title}</Text>
             </>
           ) : (
-            <Text style={styles.emptyHint}>暂无倒计时</Text>
+            <Text style={styles.emptyText}>暂无倒计时</Text>
           )}
         </Card>
 
-        {/* Birthday Card */}
         <Card
           onPress={() => navigation.navigate('Birthdays')}
           style={styles.halfCard}
         >
-          <Text style={[styles.cardLabel, { color: colors.warning }]}>🎂 生日</Text>
+          <Text style={styles.cardTitle}>🎂 生日</Text>
           {sortedBirthdays.length > 0 ? (
             <>
               <Text style={styles.bigNumber}>{sortedBirthdays[0].days}天</Text>
               <Text style={styles.eventLabel}>{sortedBirthdays[0].name} {sortedBirthdays[0].display}</Text>
             </>
           ) : (
-            <Text style={styles.emptyHint}>暂无生日</Text>
+            <Text style={styles.emptyText}>暂无生日</Text>
           )}
         </Card>
       </View>
 
-      {/* Bottom Row */}
+      {/* 第三行：纪念日 + 密码本 */}
       <View style={styles.row}>
-        {/* Anniversary Card */}
         <Card
           onPress={() => navigation.navigate('Anniversaries')}
-          style={styles.partCard}
+          style={styles.halfCard}
         >
-          <Text style={[styles.cardLabelSm, { color: colors.purple }]}>❤️ 纪念日</Text>
+          <Text style={styles.cardTitle}>❤️ 纪念日</Text>
           {sortedAnniversaries.length > 0 ? (
             <>
-              <Text style={styles.numberMd}>{sortedAnniversaries[0].days}天</Text>
-              <Text style={styles.eventLabelSm}>{sortedAnniversaries[0].title}</Text>
+              <Text style={styles.bigNumber}>{sortedAnniversaries[0].days}天</Text>
+              <Text style={styles.eventLabel}>{sortedAnniversaries[0].title}</Text>
             </>
           ) : (
-            <Text style={styles.emptyHint}>暂无纪念日</Text>
+            <Text style={styles.emptyText}>暂无纪念日</Text>
           )}
         </Card>
 
-        {/* Password Card */}
         <Card
           onPress={() => navigation.navigate('Password')}
-          style={styles.partCard}
-          color={colors.purpleLight}
+          style={styles.halfCard}
+          color={Colors.primaryLighter}
         >
-          <Text style={[styles.cardLabelSm, { color: colors.purple }]}>🔒 密码本</Text>
-          <Text style={styles.numberMd}>已锁定</Text>
-          <Text style={styles.eventLabelSm}>点击验证</Text>
+          <Text style={styles.cardTitle}>🔒 密码本</Text>
+          <Text style={styles.bigNumber}>已锁定</Text>
+          <Text style={styles.eventLabel}>点击验证</Text>
         </Card>
       </View>
     </ScrollView>
@@ -227,48 +229,53 @@ export function DashboardScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg, paddingBottom: 40 },
+  container: { flex: 1, backgroundColor: Colors.background },
+  content: { padding: Layout.spacing.md, paddingBottom: 40 },
   header: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', marginBottom: spacing.xl,
+    marginBottom: Layout.spacing.lg,
+    paddingTop: Layout.spacing.sm,
   },
-  greeting: { fontSize: fontSize.xl, fontWeight: '600', color: colors.text },
-  date: { fontSize: fontSize.sm, color: colors.textTertiary, marginTop: 2 },
-  avatar: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center',
-  },
-  avatarText: { color: colors.white, fontSize: fontSize.lg, fontWeight: '600' },
+  greeting: { fontSize: 20, fontWeight: '600', color: Colors.textPrimary },
+  date: { fontSize: 14, color: Colors.textSecondary, marginTop: 2 },
 
-  weatherCard: { marginBottom: spacing.md, minHeight: 100, justifyContent: 'center' },
+  // 天气卡片
+  weatherCard: {
+    backgroundColor: Colors.primaryLight,
+    borderRadius: Layout.radius.large,
+    padding: Layout.spacing.md,
+    marginBottom: Layout.spacing.md,
+  },
   weatherRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  weatherTemp: { fontSize: fontSize.xxxl, fontWeight: '700', color: colors.primary, marginTop: 4 },
-  weatherCity: { fontSize: fontSize.sm, color: colors.textSecondary },
-  weatherDesc: { fontSize: fontSize.sm, color: colors.textTertiary, marginTop: 2 },
-
-  row: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md },
-
-  halfCard: { flex: 1, aspectRatio: 1, justifyContent: 'center' },
-  partCard: { flex: 1, aspectRatio: 1, justifyContent: 'center' },
-
-  cardLabel: { fontSize: fontSize.sm, fontWeight: '600', marginBottom: spacing.sm },
-  cardLabelSm: { fontSize: fontSize.xs, fontWeight: '600', marginBottom: spacing.xs },
-  preview: { fontSize: fontSize.sm, color: colors.textSecondary, lineHeight: 18, flex: 1 },
-  footer: { fontSize: fontSize.xs, color: colors.textDisabled, marginTop: spacing.xs },
-  todoCard: { flex: 1, minHeight: 160, justifyContent: 'flex-start', paddingTop: spacing.md },
-  todoCount: { fontSize: fontSize.sm, color: colors.textSecondary },
-  progressBar: {
-    height: 5, backgroundColor: colors.border, borderRadius: 3,
-    marginTop: spacing.sm, overflow: 'hidden',
+  weatherLabel: { fontSize: 12, color: Colors.textSecondary },
+  weatherTemp: { fontSize: 32, fontWeight: '600', color: Colors.primary, marginVertical: 4 },
+  weatherCity: { fontSize: 14, color: Colors.textPrimary },
+  weatherDesc: { fontSize: 14, color: Colors.textSecondary, marginTop: 2 },
+  weatherInfo: {
+    flexDirection: 'row', gap: 16, marginTop: Layout.spacing.sm,
+    paddingTop: Layout.spacing.sm, borderTopWidth: 1,
+    borderTopColor: 'rgba(124,58,237,0.15)',
   },
-  progressFill: { height: '100%', backgroundColor: colors.info, borderRadius: 3 },
-  bigNumber: { fontSize: fontSize.xxl, fontWeight: '700', color: colors.text, marginVertical: 2 },
-  numberMd: { fontSize: fontSize.lg, fontWeight: '700', color: colors.text, marginVertical: 2 },
-  eventLabel: { fontSize: fontSize.sm, color: colors.textSecondary },
-  eventLabelSm: { fontSize: fontSize.xs, color: colors.textTertiary },
-  emptyHint: { fontSize: fontSize.sm, color: colors.textDisabled, marginTop: spacing.sm },
-  todoItem: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs },
-  todoBullet: { fontSize: fontSize.lg, color: colors.info, marginRight: 4, lineHeight: 18 },
-  todoTitle: { fontSize: fontSize.xs, color: colors.textSecondary, flex: 1 },
+  weatherText: { fontSize: 12, color: Colors.textSecondary },
+
+  row: { flexDirection: 'row', gap: Layout.spacing.md, marginBottom: Layout.spacing.md },
+
+  halfCard: { flex: 1 },
+
+  cardTitle: { fontSize: 16, fontWeight: '500', color: Colors.textPrimary, marginBottom: Layout.spacing.sm },
+
+  preview: { fontSize: 14, color: Colors.textSecondary, lineHeight: 20, flex: 1 },
+  footer: { fontSize: 12, color: Colors.textPlaceholder, marginTop: Layout.spacing.xs },
+  todoCount: { fontSize: 14, color: Colors.textSecondary },
+  progressBar: {
+    height: 8, backgroundColor: Colors.gray, borderRadius: 4,
+    marginTop: Layout.spacing.sm, overflow: 'hidden',
+  },
+  progressFill: { height: '100%', backgroundColor: Colors.primary, borderRadius: 4 },
+  progressLabel: { fontSize: 12, color: Colors.textPlaceholder, marginTop: Layout.spacing.xs },
+  bigNumber: { fontSize: 28, fontWeight: '700', color: Colors.textPrimary, marginVertical: 2 },
+  eventLabel: { fontSize: 14, color: Colors.textSecondary },
+  emptyText: { fontSize: 14, color: Colors.textPlaceholder, paddingVertical: 16 },
+  todoItem: { flexDirection: 'row', alignItems: 'center', marginTop: Layout.spacing.xs },
+  todoBullet: { fontSize: 16, color: Colors.primary, marginRight: 4, lineHeight: 18 },
+  todoTitle: { fontSize: 12, color: Colors.textSecondary, flex: 1 },
 });
