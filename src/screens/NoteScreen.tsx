@@ -13,7 +13,7 @@ const colorMap: Record<string, string> = {
   '#1565C0': Colors.primaryLighter,
 };
 
-export function NotesScreen() {
+export function NoteScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const [notes, setNotes] = useState<Note[]>([]);
 
@@ -32,7 +32,7 @@ export function NotesScreen() {
   const renderItem = ({ item }: { item: Note }) => (
     <TouchableOpacity
       style={styles.noteCard}
-      activeOpacity={0.8}
+      activeOpacity={0.85}
       onPress={() => navigation.navigate('NoteEditor', { noteId: item.id })}
       onLongPress={() => handleDelete(item.id)}
     >
@@ -56,7 +56,7 @@ export function NotesScreen() {
       />
       <TouchableOpacity
         style={styles.fab}
-        activeOpacity={0.8}
+        activeOpacity={0.85}
         onPress={() => navigation.navigate('NoteEditor', {})}
       >
         <Text style={styles.fabText}>+</Text>

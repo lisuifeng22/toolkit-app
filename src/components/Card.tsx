@@ -7,20 +7,20 @@ interface CardProps {
   onPress?: () => void;
   style?: ViewStyle;
   color?: string;
-  weather?: boolean;
+  noBackground?: boolean;
 }
 
-export function Card({ children, onPress, style, color, weather }: CardProps) {
+export function Card({ children, onPress, style, color, noBackground }: CardProps) {
   const cardStyle = [
     styles.card,
-    weather && styles.weatherCard,
+    noBackground && styles.noBg,
     color ? { backgroundColor: color } : undefined,
     style,
   ];
 
   if (onPress) {
     return (
-      <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={cardStyle}>
+      <TouchableOpacity activeOpacity={0.85} onPress={onPress} style={cardStyle}>
         {children}
       </TouchableOpacity>
     );
@@ -36,10 +36,9 @@ const styles = StyleSheet.create({
     padding: Layout.spacing.md,
     ...Layout.shadow.light,
   },
-  weatherCard: {
+  noBg: {
     backgroundColor: 'transparent',
     shadowOpacity: 0,
     elevation: 0,
-    borderWidth: 0,
   },
 });

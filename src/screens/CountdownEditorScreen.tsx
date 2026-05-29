@@ -37,7 +37,7 @@ export function CountdownEditorScreen() {
         onChangeText={setTitle}
       />
       <DatePickerField value={targetDate} onChange={setTargetDate} />
-      <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.8}>
+      <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.85}>
         <Text style={styles.saveText}>保存</Text>
       </TouchableOpacity>
     </View>

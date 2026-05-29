@@ -62,11 +62,11 @@ export function NoteEditorScreen() {
             key={c}
             style={[styles.colorDot, { backgroundColor: c }, colorTag === c && styles.colorDotSelected]}
             onPress={() => setColorTag(c)}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
           />
         ))}
       </View>
-      <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.8}>
+      <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.85}>
         <Text style={styles.saveText}>保存</Text>
       </TouchableOpacity>
     </View>

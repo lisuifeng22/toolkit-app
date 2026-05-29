@@ -126,10 +126,10 @@ export function WeatherScreen() {
           onSubmitEditing={() => searchCity(searchText)}
           returnKeyType="search"
         />
-        <TouchableOpacity style={styles.refreshBtn} onPress={loadWeather} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.refreshBtn} onPress={loadWeather} activeOpacity={0.85}>
           <Text style={styles.refreshBtnText}>⟳</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.searchBtn} onPress={() => searchCity(searchText)} disabled={searching} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.searchBtn} onPress={() => searchCity(searchText)} disabled={searching} activeOpacity={0.85}>
           <Text style={styles.searchBtnText}>{searching ? '...' : '搜索'}</Text>
         </TouchableOpacity>
       </View>
@@ -142,7 +142,7 @@ export function WeatherScreen() {
               style={[styles.chip, styles.savedChip]}
               onPress={() => searchCity(city)}
               onLongPress={() => handleRemoveLocation(city)}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
               <Text style={styles.chipText}>★ {city}</Text>
             </TouchableOpacity>
@@ -151,11 +151,11 @@ export function WeatherScreen() {
       )}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
-        <TouchableOpacity style={styles.chip} onPress={loadWeather} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.chip} onPress={loadWeather} activeOpacity={0.85}>
           <Text style={styles.chipText}>📍 当前位置</Text>
         </TouchableOpacity>
         {POPULAR_CITIES.map(city => (
-          <TouchableOpacity key={city} style={styles.chip} onPress={() => searchCity(city)} activeOpacity={0.8}>
+          <TouchableOpacity key={city} style={styles.chip} onPress={() => searchCity(city)} activeOpacity={0.85}>
             <Text style={styles.chipText}>{city}</Text>
           </TouchableOpacity>
         ))}
@@ -170,7 +170,7 @@ export function WeatherScreen() {
       {weather && (
         <>
           <View style={styles.currentCard}>
-            <TouchableOpacity style={styles.saveBtn} onPress={handleToggleSave} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.saveBtn} onPress={handleToggleSave} activeOpacity={0.85}>
               <Text style={styles.saveBtnText}>{isSaved ? '★ 已收藏' : '☆ 收藏'}</Text>
             </TouchableOpacity>
 

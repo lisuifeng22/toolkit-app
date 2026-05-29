@@ -6,7 +6,7 @@ import { Colors, Layout } from '../constants/Colors';
 import { loadTodos, toggleTodo, deleteTodo } from '../storage/todos';
 import { Todo } from '../types';
 
-export function TodosScreen() {
+export function TodoScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const [todos, setTodos] = useState<Todo[]>([]);
 
@@ -30,13 +30,13 @@ export function TodosScreen() {
   const renderItem = ({ item }: { item: Todo }) => (
     <TouchableOpacity
       style={styles.todoCard}
-      activeOpacity={0.8}
+      activeOpacity={0.85}
       onLongPress={() => handleDelete(item.id)}
     >
       <TouchableOpacity
         style={[styles.checkbox, item.completed && styles.checkboxDone]}
         onPress={() => handleToggle(item.id)}
-        activeOpacity={0.8}
+        activeOpacity={0.85}
       >
         {item.completed && <Text style={styles.checkmark}>✓</Text>}
       </TouchableOpacity>
@@ -75,7 +75,7 @@ export function TodosScreen() {
 
       <TouchableOpacity
         style={styles.fab}
-        activeOpacity={0.8}
+        activeOpacity={0.85}
         onPress={() => navigation.navigate('TodoEditor', {})}
       >
         <Text style={styles.fabText}>+</Text>

@@ -50,7 +50,7 @@ export function DatePickerField({ value, onChange, mode = 'date', label }: Props
         />
       ) : (
         <>
-          <TouchableOpacity style={styles.pickerBtn} onPress={() => setShow(true)} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.pickerBtn} onPress={() => setShow(true)} activeOpacity={0.85}>
             <Text style={styles.pickerText}>{formatDate(value)}</Text>
             <Text style={styles.pickerIcon}>{mode === 'date' ? '📅' : '⏰'}</Text>
           </TouchableOpacity>

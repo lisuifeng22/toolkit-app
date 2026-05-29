@@ -81,7 +81,7 @@ export function PinSetupScreen() {
                 key={ki}
                 style={styles.key}
                 onPress={() => key === '⌫' ? handleDelete() : handlePress(key)}
-                activeOpacity={0.8}
+                activeOpacity={0.85}
               >
                 <Text style={styles.keyText}>{key}</Text>
               </TouchableOpacity>

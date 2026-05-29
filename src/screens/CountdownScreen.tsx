@@ -6,7 +6,7 @@ import { loadCountdowns, deleteCountdown } from '../storage/countdowns';
 import { getDaysRemaining } from '../utils/dates';
 import { Countdown } from '../types';
 
-export function CountdownsScreen() {
+export function CountdownScreen() {
   const navigation = useNavigation<any>();
   const [items, setItems] = useState<(Countdown & { days: number })[]>([]);
 
@@ -29,7 +29,7 @@ export function CountdownsScreen() {
   const renderItem = ({ item }: { item: Countdown & { days: number } }) => (
     <TouchableOpacity
       style={styles.card}
-      activeOpacity={0.8}
+      activeOpacity={0.85}
       onLongPress={() => handleDelete(item.id)}
     >
       <Text style={styles.days}>{item.days}</Text>
@@ -50,7 +50,7 @@ export function CountdownsScreen() {
         contentContainerStyle={items.length === 0 ? styles.empty : styles.list}
         ListEmptyComponent={<Text style={styles.emptyText}>暂无倒计时{'\n'}点击右下角 + 添加</Text>}
       />
-      <TouchableOpacity style={styles.fab} activeOpacity={0.8} onPress={() => navigation.navigate('CountdownEditor', {})}>
+      <TouchableOpacity style={styles.fab} activeOpacity={0.85} onPress={() => navigation.navigate('CountdownEditor', {})}>
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
     </View>

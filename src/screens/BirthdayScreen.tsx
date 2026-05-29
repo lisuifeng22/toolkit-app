@@ -7,7 +7,7 @@ import { getDaysRemaining, formatDate } from '../utils/dates';
 import { Birthday } from '../types';
 import { DatePickerField } from '../components/DatePickerField';
 
-export function BirthdaysScreen() {
+export function BirthdayScreen() {
   const [items, setItems] = useState<(Birthday & { days: number })[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState('');
@@ -49,7 +49,7 @@ export function BirthdaysScreen() {
   };
 
   const renderItem = ({ item }: { item: Birthday & { days: number } }) => (
-    <TouchableOpacity style={styles.card} activeOpacity={0.8} onLongPress={() => handleDelete(item.id)}>
+    <TouchableOpacity style={styles.card} activeOpacity={0.85} onLongPress={() => handleDelete(item.id)}>
       <View style={styles.avatarCircle}>
         <Text style={styles.avatarText}>{item.name[0]}</Text>
       </View>
@@ -79,16 +79,16 @@ export function BirthdaysScreen() {
           <TextInput style={styles.input} placeholder="姓名" placeholderTextColor={Colors.textPlaceholder} value={name} onChangeText={setName} />
           <DatePickerField value={birthDate} onChange={setBirthDate} />
           <View style={styles.formBtns}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowAdd(false)} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowAdd(false)} activeOpacity={0.85}>
               <Text style={styles.cancelText}>取消</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.addBtn} onPress={handleAdd} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.addBtn} onPress={handleAdd} activeOpacity={0.85}>
               <Text style={styles.addBtnText}>添加</Text>
             </TouchableOpacity>
           </View>
         </View>
       ) : (
-        <TouchableOpacity style={styles.fab} onPress={() => setShowAdd(true)} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.fab} onPress={() => setShowAdd(true)} activeOpacity={0.85}>
           <Text style={styles.fabText}>+</Text>
         </TouchableOpacity>
       )}

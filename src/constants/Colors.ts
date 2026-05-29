@@ -1,6 +1,6 @@
 export const Colors = {
   primary: '#7C3AED',
-  primaryLight: 'rgba(124, 58, 237, 0.1)',
+  primaryLight: 'rgba(124, 58, 237, 0.15)',
   primaryLighter: 'rgba(124, 58, 237, 0.05)',
 
   success: '#10B981',

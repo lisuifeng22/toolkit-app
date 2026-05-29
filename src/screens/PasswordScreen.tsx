@@ -60,14 +60,14 @@ export function PasswordScreen() {
   if (state === 'check') return <PinVerifyScreen onVerified={handleVerified} />;
 
   const renderItem = ({ item }: { item: Password }) => (
-    <TouchableOpacity style={styles.card} activeOpacity={0.8} onLongPress={() => handleDelete(item.id)}>
+    <TouchableOpacity style={styles.card} activeOpacity={0.85} onLongPress={() => handleDelete(item.id)}>
       <View style={styles.siteIcon}>
         <Text style={styles.siteLetter}>{item.siteName[0]}</Text>
       </View>
       <View style={styles.cardBody}>
         <Text style={styles.siteName}>{item.siteName}</Text>
         <Text style={styles.username}>{item.username || '无用户名'}</Text>
-        <TouchableOpacity onPress={() => setRevealed(prev => ({ ...prev, [item.id]: !prev[item.id] }))} activeOpacity={0.8}>
+        <TouchableOpacity onPress={() => setRevealed(prev => ({ ...prev, [item.id]: !prev[item.id] }))} activeOpacity={0.85}>
           <Text style={styles.passwordText}>
             {revealed[item.id] ? item.password : '••••••••'}
           </Text>
@@ -92,16 +92,16 @@ export function PasswordScreen() {
           <TextInput style={styles.input} placeholder="用户名" placeholderTextColor={Colors.textPlaceholder} value={username} onChangeText={setUsername} />
           <TextInput style={styles.input} placeholder="密码" placeholderTextColor={Colors.textPlaceholder} value={password} onChangeText={setPassword} secureTextEntry />
           <View style={styles.formBtns}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowAdd(false)} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowAdd(false)} activeOpacity={0.85}>
               <Text style={styles.cancelText}>取消</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.addBtn} onPress={handleAdd} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.addBtn} onPress={handleAdd} activeOpacity={0.85}>
               <Text style={styles.addBtnText}>保存</Text>
             </TouchableOpacity>
           </View>
         </View>
       ) : (
-        <TouchableOpacity style={styles.fab} onPress={() => setShowAdd(true)} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.fab} onPress={() => setShowAdd(true)} activeOpacity={0.85}>
           <Text style={styles.fabText}>+</Text>
         </TouchableOpacity>
       )}

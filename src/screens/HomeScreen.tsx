@@ -18,7 +18,7 @@ type Props = {
   navigation: DrawerNavigationProp<any>;
 };
 
-export function DashboardScreen({ navigation }: Props) {
+export function HomeScreen({ navigation }: Props) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [countdowns, setCountdowns] = useState<Countdown[]>([]);
@@ -109,7 +109,7 @@ export function DashboardScreen({ navigation }: Props) {
       <Card
         onPress={() => navigation.navigate('Weather')}
         style={styles.weatherCard}
-        weather
+        noBackground
       >
         <View style={styles.weatherRow}>
           <View>
