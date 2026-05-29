@@ -24,17 +24,26 @@ export function WeatherScreen() {
     setLoading(true);
     setError('');
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setError('📍 需要定位权限才能获取当前位置天气，请搜索城市');
+      const serviceEnabled = await Location.hasServicesEnabledAsync();
+      if (!serviceEnabled) {
+        setError('手机定位服务未开启，请打开系统定位，或直接搜索城市');
         setLoading(false);
         return;
       }
-      const loc = await Location.getCurrentPositionAsync({});
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setError('需要定位权限才能获取当前位置天气，请在系统设置中允许定位，或直接搜索城市');
+        setLoading(false);
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+        timeInterval: 5000,
+      });
       const data = await fetchWeatherByCoords(loc.coords.latitude, loc.coords.longitude);
       setWeather(data);
     } catch (e: any) {
-      setError(e.message || '获取天气失败');
+      setError(e.message || '获取天气失败，请尝试搜索城市');
     }
     setLoading(false);
   };
