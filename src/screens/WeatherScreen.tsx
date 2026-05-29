@@ -1,0 +1,260 @@
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, ActivityIndicator, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import * as Location from 'expo-location';
+import { colors, spacing, fontSize } from '../theme';
+import { fetchWeatherByCoords, fetchWeatherByCity, getWeatherEmoji, WeatherData } from '../services/weather';
+import { loadLocations, saveLocation, removeLocation } from '../storage/weather-locations';
+
+const POPULAR_CITIES = ['北京', '上海', '广州', '深圳', '杭州', '成都', '武汉', '南京', '重庆', '西安', '厦门', '长沙'];
+
+export function WeatherScreen() {
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
+  const [error, setError] = useState('');
+  const [searchText, setSearchText] = useState('');
+  const [savedLocations, setSavedLocations] = useState<string[]>([]);
+
+  useEffect(() => {
+    loadLocations().then(setSavedLocations);
+    loadWeather();
+  }, []);
+
+  const loadWeather = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setError('📍 需要定位权限才能获取当前位置天气，请搜索城市');
+        setLoading(false);
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({});
+      const data = await fetchWeatherByCoords(loc.coords.latitude, loc.coords.longitude);
+      setWeather(data);
+    } catch (e: any) {
+      setError(e.message || '获取天气失败');
+    }
+    setLoading(false);
+  };
+
+  const searchCity = async (city: string) => {
+    if (!city.trim()) return;
+    setSearching(true);
+    setError('');
+    try {
+      const data = await fetchWeatherByCity(city.trim());
+      setWeather(data);
+    } catch (e: any) {
+      setError(e.message || '未找到该城市');
+    }
+    setSearching(false);
+  };
+
+  const handleToggleSave = async () => {
+    if (!weather) return;
+    const cityName = weather.cityName;
+    if (savedLocations.includes(cityName)) {
+      const list = await removeLocation(cityName);
+      setSavedLocations(list);
+    } else {
+      const list = await saveLocation(cityName);
+      setSavedLocations(list);
+    }
+  };
+
+  const handleRemoveLocation = (city: string) => {
+    Alert.alert('删除位置', `确定删除「${city}」吗？`, [
+      { text: '取消', style: 'cancel' },
+      { text: '删除', style: 'destructive', onPress: async () => {
+        const list = await removeLocation(city);
+        setSavedLocations(list);
+      }},
+    ]);
+  };
+
+  // 首次加载中
+  if (loading && !weather) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>正在获取天气...</Text>
+      </View>
+    );
+  }
+
+  const isSaved = weather ? savedLocations.includes(weather.cityName) : false;
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* 搜索栏 */}
+      <View style={styles.searchRow}>
+        <TextInput
+          style={styles.searchInput}
+          value={searchText}
+          onChangeText={setSearchText}
+          placeholder="搜索城市..."
+          placeholderTextColor={colors.textDisabled}
+          onSubmitEditing={() => searchCity(searchText)}
+          returnKeyType="search"
+        />
+        <TouchableOpacity style={styles.searchBtn} onPress={() => searchCity(searchText)} disabled={searching}>
+          <Text style={styles.searchBtnText}>{searching ? '...' : '搜索'}</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 收藏位置 */}
+      {savedLocations.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
+          {savedLocations.map(city => (
+            <TouchableOpacity
+              key={city}
+              style={[styles.chip, styles.savedChip]}
+              onPress={() => searchCity(city)}
+              onLongPress={() => handleRemoveLocation(city)}
+            >
+              <Text style={styles.chipText}>★ {city}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
+      {/* 热门城市 */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
+        <TouchableOpacity style={styles.chip} onPress={loadWeather}>
+          <Text style={styles.chipText}>📍 当前位置</Text>
+        </TouchableOpacity>
+        {POPULAR_CITIES.map(city => (
+          <TouchableOpacity key={city} style={styles.chip} onPress={() => searchCity(city)}>
+            <Text style={styles.chipText}>{city}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* 错误提示 */}
+      {error ? (
+        <Text style={styles.errorText}>{error}</Text>
+      ) : null}
+
+      {/* 搜索中指示器 */}
+      {searching && (
+        <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: spacing.md }} />
+      )}
+
+      {/* 当前天气 */}
+      {weather && (
+        <>
+          <View style={styles.currentCard}>
+            {/* 收藏按钮 */}
+            <TouchableOpacity style={styles.saveBtn} onPress={handleToggleSave}>
+              <Text style={styles.saveBtnText}>{isSaved ? '★ 已收藏' : '☆ 收藏'}</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.emoji}>{getWeatherEmoji(weather.icon)}</Text>
+            <Text style={styles.temp}>{weather.temp}°</Text>
+            <Text style={styles.city}>{weather.cityName}</Text>
+            <Text style={styles.desc}>{weather.description} · 体感 {weather.feelsLike}°</Text>
+            <View style={styles.details}>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>💧 湿度</Text>
+                <Text style={styles.detailValue}>{weather.humidity}%</Text>
+              </View>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>🌬 风速</Text>
+                <Text style={styles.detailValue}>{weather.windSpeed} km/h</Text>
+              </View>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>🌡 范围</Text>
+                <Text style={styles.detailValue}>{weather.tempMin}~{weather.tempMax}°</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* 预报 */}
+          <View style={styles.forecast}>
+            <Text style={styles.sectionTitle}>未来预报</Text>
+            {weather.forecast.map((day, i) => (
+              <View key={i} style={styles.forecastRow}>
+                <Text style={styles.forecastDay}>{day.day}</Text>
+                <Text style={styles.forecastIcon}>{getWeatherEmoji(day.icon)}</Text>
+                <Text style={styles.forecastDesc}>{day.description}</Text>
+                <Text style={styles.forecastTemp}>{day.tempMin}° / {day.tempMax}°</Text>
+              </View>
+            ))}
+          </View>
+
+          <Text style={styles.note}>数据来自 wttr.in</Text>
+        </>
+      )}
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  content: { padding: spacing.lg, paddingBottom: 40 },
+  center: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
+  loadingText: { fontSize: fontSize.sm, color: colors.textTertiary, marginTop: spacing.md },
+  errorText: { fontSize: fontSize.sm, color: '#d32f2f', textAlign: 'center', marginBottom: spacing.sm },
+
+  searchRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
+  searchInput: {
+    flex: 1, height: 40, borderRadius: 10, backgroundColor: colors.white,
+    paddingHorizontal: spacing.md, fontSize: fontSize.sm, color: colors.text,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  searchBtn: {
+    height: 40, paddingHorizontal: spacing.lg, backgroundColor: colors.primary,
+    borderRadius: 10, alignItems: 'center', justifyContent: 'center',
+  },
+  searchBtnText: { color: colors.white, fontWeight: '600', fontSize: fontSize.sm },
+
+  chipsRow: { marginBottom: spacing.sm },
+  chip: {
+    paddingHorizontal: spacing.md, paddingVertical: 6, borderRadius: 16,
+    backgroundColor: colors.white, marginRight: spacing.sm,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  savedChip: { backgroundColor: colors.warningLight, borderColor: colors.warning },
+  chipText: { fontSize: fontSize.xs, color: colors.textSecondary },
+
+  currentCard: {
+    backgroundColor: colors.secondaryLight,
+    borderRadius: 16, padding: spacing.xl,
+    alignItems: 'center', marginBottom: spacing.lg, position: 'relative',
+  },
+  saveBtn: {
+    position: 'absolute', top: spacing.md, right: spacing.md,
+    paddingHorizontal: spacing.md, paddingVertical: 4,
+    borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.7)',
+  },
+  saveBtnText: { fontSize: fontSize.xs, color: colors.primary, fontWeight: '600' },
+  emoji: { fontSize: 48, marginBottom: spacing.sm },
+  temp: { fontSize: 48, fontWeight: '700', color: colors.primary },
+  city: { fontSize: fontSize.lg, color: colors.text, marginTop: spacing.xs },
+  desc: { fontSize: fontSize.sm, color: colors.textTertiary, marginTop: 4 },
+  details: {
+    flexDirection: 'row', justifyContent: 'space-around',
+    width: '100%', marginTop: spacing.lg,
+    paddingTop: spacing.lg, borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.06)',
+  },
+  detailItem: { alignItems: 'center' },
+  detailLabel: { fontSize: fontSize.sm, color: colors.textTertiary },
+  detailValue: { fontSize: fontSize.md, fontWeight: '600', color: colors.text, marginTop: 2 },
+
+  forecast: { backgroundColor: colors.white, borderRadius: 16, padding: spacing.lg },
+  sectionTitle: { fontSize: fontSize.md, fontWeight: '600', color: colors.text, marginBottom: spacing.md },
+  forecastRow: {
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1, borderBottomColor: colors.divider,
+  },
+  forecastDay: { fontSize: fontSize.sm, color: colors.textSecondary, width: 50 },
+  forecastIcon: { fontSize: 18 },
+  forecastDesc: { flex: 1, fontSize: fontSize.xs, color: colors.textTertiary, marginHorizontal: spacing.sm },
+  forecastTemp: { fontSize: fontSize.sm, color: colors.textSecondary },
+  note: { fontSize: fontSize.xs, color: colors.textDisabled, textAlign: 'center', marginTop: spacing.lg },
+});

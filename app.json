@@ -10,6 +10,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.lisuifeng.toolkitapp",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -20,6 +21,23 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-sqlite",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "允许工具集获取您的位置以提供天气服务",
+          "locationWhenInUsePermission": "允许工具集获取您的位置以提供天气服务"
+        }
+      ],
+      "@react-native-community/datetimepicker"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "5acd36b2-b162-4708-b5b9-84cf8b032930"
+      }
+    },
+    "owner": "lisuifeng"
   }
 }
