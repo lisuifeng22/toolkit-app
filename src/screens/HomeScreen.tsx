@@ -208,6 +208,7 @@ export function HomeScreen({ navigation }: Props) {
             <>
               <Text style={styles.bigNumber}>{sortedAnniversaries[0].days}天</Text>
               <Text style={styles.eventLabel}>{sortedAnniversaries[0].title}</Text>
+              <Text style={styles.sinceText}>已 {sortedAnniversaries[0].since} 天</Text>
             </>
           ) : (
             <Text style={styles.emptyText}>暂无纪念日</Text>
@@ -274,6 +275,7 @@ const styles = StyleSheet.create({
   progressLabel: { fontSize: 12, color: Colors.textPlaceholder, marginTop: Layout.spacing.xs },
   bigNumber: { fontSize: 28, fontWeight: '700', color: Colors.textPrimary, marginVertical: 2 },
   eventLabel: { fontSize: 14, color: Colors.textSecondary },
+  sinceText: { fontSize: 12, color: Colors.textPlaceholder, marginTop: 2 },
   emptyText: { fontSize: 14, color: Colors.textPlaceholder, paddingVertical: 16 },
   todoItem: { flexDirection: 'row', alignItems: 'center', marginTop: Layout.spacing.xs },
   todoBullet: { fontSize: 16, color: Colors.primary, marginRight: 4, lineHeight: 18 },
