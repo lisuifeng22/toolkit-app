@@ -108,7 +108,7 @@ export default function DrawerNavigator() {
           color: Colors.textPrimary,
         },
         headerTintColor: Colors.textPrimary,
-        headerLeft: () => <MenuButton navigation={navigation} />,
+        headerLeft: () => <BackButton navigation={navigation} />,
       })}
     >
       <Drawer.Screen name="Dashboard" component={HomeScreen}
@@ -116,6 +116,7 @@ export default function DrawerNavigator() {
           title: '首页',
           drawerLabel: '首页',
           drawerIcon: () => <DrawerIcon emoji="🏠" />,
+          headerLeft: () => <MenuButton navigation={navigation} />,
         }} />
       <Drawer.Screen name="Notes" component={NotesStackScreen}
         options={{
