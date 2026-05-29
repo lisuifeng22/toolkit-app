@@ -39,7 +39,9 @@ export function HomeScreen({ navigation }: Props) {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
-        const loc = await Location.getCurrentPositionAsync({});
+        const loc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+        });
         const data = await fetchWeatherByCoords(loc.coords.latitude, loc.coords.longitude);
         setWeather(data);
         return;
