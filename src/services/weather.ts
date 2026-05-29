@@ -98,6 +98,14 @@ export async function fetchWeatherByCoords(lat: number, lon: number): Promise<We
   return parseWeatherResponse(await res.json());
 }
 
+/** 通过 IP 定位获取天气（不依赖 GPS 硬件），作为 GPS 不可用时的降级方案 */
+export async function fetchWeatherByIP(): Promise<WeatherData> {
+  const url = `https://wttr.in?format=j1&lang=zh`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('获取天气失败');
+  return parseWeatherResponse(await res.json());
+}
+
 export async function fetchWeatherByCity(city: string): Promise<WeatherData> {
   const url = `https://wttr.in/${encodeURIComponent(normalizeCity(city))}?format=j1&lang=zh`;
   const res = await fetch(url);

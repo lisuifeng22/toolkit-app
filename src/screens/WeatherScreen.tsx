@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, ActivityIndicator, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import * as Location from 'expo-location';
 import { colors, spacing, fontSize } from '../theme';
-import { fetchWeatherByCoords, fetchWeatherByCity, getWeatherEmoji, WeatherData } from '../services/weather';
+import { fetchWeatherByCoords, fetchWeatherByCity, fetchWeatherByIP, getWeatherEmoji, WeatherData } from '../services/weather';
 import { loadLocations, saveLocation, removeLocation } from '../storage/weather-locations';
 
 const POPULAR_CITIES = ['北京', '上海', '广州', '深圳', '杭州', '成都', '武汉', '南京', '重庆', '西安', '厦门', '长沙'];
@@ -24,23 +24,27 @@ export function WeatherScreen() {
     setLoading(true);
     setError('');
     try {
+      // 先尝试 GPS 定位（国内很多设备没有 Google Play Services，会失败）
       const serviceEnabled = await Location.hasServicesEnabledAsync();
-      if (!serviceEnabled) {
-        setError('手机定位服务未开启，请打开系统定位，或直接搜索城市');
-        setLoading(false);
-        return;
+      if (serviceEnabled) {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const loc = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          const data = await fetchWeatherByCoords(loc.coords.latitude, loc.coords.longitude);
+          setWeather(data);
+          setLoading(false);
+          return;
+        }
       }
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setError('需要定位权限才能获取当前位置天气，请在系统设置中允许定位，或直接搜索城市');
-        setLoading(false);
-        return;
-      }
-      const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-        timeInterval: 5000,
-      });
-      const data = await fetchWeatherByCoords(loc.coords.latitude, loc.coords.longitude);
+    } catch {
+      // GPS 失败，静默降级到 IP 定位
+    }
+
+    // 降级：通过 IP 获取位置天气
+    try {
+      const data = await fetchWeatherByIP();
       setWeather(data);
     } catch (e: any) {
       setError(e.message || '获取天气失败，请尝试搜索城市');

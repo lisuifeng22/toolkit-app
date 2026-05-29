@@ -10,7 +10,7 @@ import { loadCountdowns } from '../storage/countdowns';
 import { loadBirthdays } from '../storage/birthdays';
 import { loadAnniversaries } from '../storage/anniversaries';
 import { getDaysRemaining, getDaysSince, formatDate } from '../utils/dates';
-import { fetchWeatherByCoords, getWeatherEmoji, WeatherData } from '../services/weather';
+import { fetchWeatherByCoords, fetchWeatherByIP, getWeatherEmoji, WeatherData } from '../services/weather';
 import * as Location from 'expo-location';
 import { Note, Todo, Countdown, Birthday, Anniversary } from '../types';
 
@@ -38,9 +38,17 @@ export function DashboardScreen({ navigation }: Props) {
   const loadWeather = useCallback(async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return;
-      const loc = await Location.getCurrentPositionAsync({});
-      const data = await fetchWeatherByCoords(loc.coords.latitude, loc.coords.longitude);
+      if (status === 'granted') {
+        const loc = await Location.getCurrentPositionAsync({});
+        const data = await fetchWeatherByCoords(loc.coords.latitude, loc.coords.longitude);
+        setWeather(data);
+        return;
+      }
+    } catch {}
+
+    // GPS 不可用时降级到 IP 定位
+    try {
+      const data = await fetchWeatherByIP();
       setWeather(data);
     } catch {}
   }, []);
