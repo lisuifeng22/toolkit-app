@@ -4,6 +4,7 @@ import * as Location from 'expo-location';
 import { Colors, Layout } from '../constants/Colors';
 import { fetchWeatherByCoords, fetchWeatherByCity, fetchWeatherByIP, getWeatherEmoji, WeatherData } from '../services/weather';
 import { loadLocations, saveLocation, removeLocation } from '../storage/weather-locations';
+import { getWeatherCache, setWeatherCache } from '../storage/weather-cache';
 
 const POPULAR_CITIES = ['北京', '上海', '广州', '深圳', '杭州', '成都', '武汉', '南京', '重庆', '西安', '厦门', '长沙'];
 
@@ -18,31 +19,49 @@ export function WeatherScreen() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadWeather = useCallback(async () => {
-    setLoading(true);
     setError('');
-    try {
-      const serviceEnabled = await Location.hasServicesEnabledAsync();
-      if (serviceEnabled) {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === 'granted') {
-          const loc = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.High,
-          });
-          const data = await fetchWeatherByCoords(loc.coords.latitude, loc.coords.longitude);
-          setWeather(data);
-          setLoading(false);
-          return;
-        }
-      }
-    } catch {}
 
-    try {
-      const data = await fetchWeatherByIP();
-      setWeather(data);
-    } catch (e: any) {
-      setError(e.message || '获取天气失败，请尝试搜索城市');
+    // 1. 有缓存直接展示，不转圈
+    const cached = await getWeatherCache();
+    if (cached) {
+      setWeather(cached);
+      setLoading(false);
+    } else {
+      setLoading(true);
     }
-    setLoading(false);
+
+    // 2. IP 定位和 GPS 定位同时发起（并行）
+    const ipPromise = fetchWeatherByIP().catch(() => null);
+
+    const gpsPromise = (async (): Promise<WeatherData | null> => {
+      try {
+        if (!await Location.hasServicesEnabledAsync()) return null;
+        if ((await Location.requestForegroundPermissionsAsync()).status !== 'granted') return null;
+        const loc = await Promise.race([
+          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
+          new Promise<null>(resolve => setTimeout(() => resolve(null), 5000)),
+        ]);
+        if (!loc) return null;
+        return await fetchWeatherByCoords(loc.coords.latitude, loc.coords.longitude);
+      } catch { return null; }
+    })();
+
+    // 3. IP 通常更快，先展示
+    const ipData = await ipPromise;
+    if (ipData) {
+      setWeather(ipData);
+      setWeatherCache(ipData);
+      if (!cached) setLoading(false);
+    }
+
+    // 4. GPS 结果回来再更新（更精确）
+    const gpsData = await gpsPromise;
+    if (gpsData && gpsData.cityName !== (weather?.cityName ?? ipData?.cityName)) {
+      setWeather(gpsData);
+      setWeatherCache(gpsData);
+    }
+
+    if (!cached && !ipData) setLoading(false);
   }, []);
 
   useEffect(() => {
