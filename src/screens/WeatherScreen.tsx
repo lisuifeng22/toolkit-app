@@ -45,25 +45,25 @@ export function WeatherScreen() {
           return null;
         }
 
-        // 先尝试 GPS 高精度定位（12s 超时）
+        // 并行发起 GPS 高精度和网络定位
+        const highPromise = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }).catch(() => null);
+        const balancedPromise = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).catch(() => null);
+
+        // 等 5 秒，GPS 有结果就用 GPS
         let loc = await Promise.race([
-          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
-          new Promise<null>(resolve => setTimeout(() => resolve(null), 12000)),
+          highPromise,
+          new Promise<null>(resolve => setTimeout(() => resolve(null), 5000)),
         ]);
 
         if (loc) {
-          console.log('[定位] GPS 高精度定位成功');
+          console.log('[定位] GPS 高精度 5s 内定位成功');
         } else {
-          // 降级到网络定位（5s 超时）
-          console.warn('[定位] GPS 超时，降级到网络定位');
-          loc = await Promise.race([
-            Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
-            new Promise<null>(resolve => setTimeout(() => resolve(null), 5000)),
-          ]);
+          // GPS 超时，取网络定位（应该已经返回了）
+          loc = await balancedPromise;
           if (loc) {
-            console.log('[定位] 网络定位成功');
+            console.log('[定位] 5s 超时，使用网络定位');
           } else {
-            console.warn('[定位] 网络定位也超时');
+            console.warn('[定位] 网络定位也失败');
             return null;
           }
         }
