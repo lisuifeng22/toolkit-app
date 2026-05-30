@@ -37,7 +37,7 @@ export function WeatherScreen() {
         if ((await Location.requestForegroundPermissionsAsync()).status !== 'granted') return null;
         const loc = await Promise.race([
           Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
-          new Promise<null>(resolve => setTimeout(() => resolve(null), 5000)),
+          new Promise<null>(resolve => setTimeout(() => resolve(null), 12000)),
         ]);
         if (!loc) return null;
         return await fetchWeatherByCoords(loc.coords.latitude, loc.coords.longitude);
