@@ -30,18 +30,50 @@ export function WeatherScreen() {
       setLoading(true);
     }
 
-    // 2. GPS 定位（5 秒超时）
+    // 2. 定位：先试 GPS（High），超时降级到网络定位（Balanced）
     const data = await (async (): Promise<WeatherData | null> => {
       try {
-        if (!await Location.hasServicesEnabledAsync()) return null;
-        if ((await Location.requestForegroundPermissionsAsync()).status !== 'granted') return null;
-        const loc = await Promise.race([
+        const enabled = await Location.hasServicesEnabledAsync();
+        if (!enabled) {
+          console.warn('[定位] GPS 服务未开启');
+          return null;
+        }
+
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          console.warn('[定位] 权限被拒绝:', status);
+          return null;
+        }
+
+        // 先尝试 GPS 高精度定位（12s 超时）
+        let loc = await Promise.race([
           Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
           new Promise<null>(resolve => setTimeout(() => resolve(null), 12000)),
         ]);
-        if (!loc) return null;
+
+        if (loc) {
+          console.log('[定位] GPS 高精度定位成功');
+        } else {
+          // 降级到网络定位（5s 超时）
+          console.warn('[定位] GPS 超时，降级到网络定位');
+          loc = await Promise.race([
+            Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+            new Promise<null>(resolve => setTimeout(() => resolve(null), 5000)),
+          ]);
+          if (loc) {
+            console.log('[定位] 网络定位成功');
+          } else {
+            console.warn('[定位] 网络定位也超时');
+            return null;
+          }
+        }
+
+        console.log('[定位] 坐标:', loc.coords.latitude, loc.coords.longitude);
         return await fetchWeatherByCoords(loc.coords.latitude, loc.coords.longitude);
-      } catch { return null; }
+      } catch (e) {
+        console.error('[定位] 异常:', e);
+        return null;
+      }
     })();
 
     if (data) {
