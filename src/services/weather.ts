@@ -65,13 +65,17 @@ async function getAdcodeByCity(city: string): Promise<string> {
 }
 
 async function fetchWeatherByAdcode(adcode: string): Promise<WeatherData> {
-  const url = `${API}/weather/weatherInfo?key=${AMAP_KEY}&city=${adcode}&extensions=all`;
-  const res = await fetch(url);
-  const data = await res.json();
-  if (data.status !== '1') throw new Error(data.info || '获取天气失败');
+  // 需要分别请求 base（实时）和 all（预报）
+  const [baseData, allData] = await Promise.all([
+    fetch(`${API}/weather/weatherInfo?key=${AMAP_KEY}&city=${adcode}&extensions=base`).then(r => r.json()),
+    fetch(`${API}/weather/weatherInfo?key=${AMAP_KEY}&city=${adcode}&extensions=all`).then(r => r.json()),
+  ]);
 
-  const live = data.lives?.[0];
-  const forecast = data.forecasts?.[0];
+  if (baseData.status !== '1') throw new Error(baseData.info || '获取实时天气失败');
+  if (allData.status !== '1') throw new Error(allData.info || '获取预报天气失败');
+
+  const live = baseData.lives?.[0];
+  const forecast = allData.forecasts?.[0];
   if (!live || !forecast) throw new Error('天气数据为空');
 
   const casts = forecast.casts || [];
