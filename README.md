@@ -1,8 +1,19 @@
-# Toolkit App v2.0.0
+# Toolkit App v2.0.1
 
 一个功能丰富的移动端工具集合应用，基于 **React Native (Expo SDK 56)** 构建，支持 Android 和 Web 平台。
 
 ## 更新日志
+
+### v2.0.1 — 高德天气 API + 性能优化
+
+**🌤 天气服务**
+- 替换 wttr.in 为高德地图 Web 服务 API，中国城市数据更准确
+- API Key 通过 `src/services/gaode-config.ts` 配置（不提交到 Git）
+- 新增天气数据缓存（15 分钟 TTL），页面秒开
+
+**⚡ 性能优化**
+- GPS 定位 5 秒超时降级，避免长时间等待
+- 天气加载不再阻塞页面渲染
 
 ### v2.0.0 — 全局美化与导航重构
 
@@ -22,7 +33,7 @@
 - GPS 定位精度提升至 High
 - 每 30 分钟按系统时钟对齐自动刷新
 - 新增刷新按钮
-- GPS 不可用时自动降级到 IP 定位
+- API Key 独立配置，安全可控
 
 **📝 首页仪表盘**
 - 待办栏展示最早 4 条未完成项
@@ -58,6 +69,10 @@
 ```bash
 # 安装依赖
 npm install
+
+# 配置天气 API Key
+cp src/services/gaode-config.example.ts src/services/gaode-config.ts
+# 然后编辑 gaode-config.ts 填入你的高德 Web 服务 API Key
 
 # 启动 Web 版
 npx expo start --web
