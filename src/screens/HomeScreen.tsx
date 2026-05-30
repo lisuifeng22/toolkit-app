@@ -10,7 +10,7 @@ import { loadCountdowns } from '../storage/countdowns';
 import { loadBirthdays } from '../storage/birthdays';
 import { loadAnniversaries } from '../storage/anniversaries';
 import { getDaysRemaining, getDaysSince, formatDate } from '../utils/dates';
-import { fetchWeatherByCoords, fetchWeatherByIP, getWeatherEmoji, WeatherData } from '../services/weather';
+import { fetchWeatherByCoords, getWeatherEmoji, WeatherData } from '../services/weather';
 import * as Location from 'expo-location';
 import { getWeatherCache, setWeatherCache } from '../storage/weather-cache';
 import { Note, Todo, Countdown, Birthday, Anniversary } from '../types';
@@ -37,16 +37,12 @@ export function HomeScreen({ navigation }: Props) {
   }, []);
 
   const loadWeather = useCallback(async () => {
-    // 1. 有缓存直接展示
     const cached = await getWeatherCache();
     if (cached) {
       setWeather(cached);
     }
 
-    // 2. IP 和 GPS 并行，IP 先展示，GPS 后台更新
-    const ipPromise = fetchWeatherByIP().catch(() => null);
-
-    const gpsPromise = (async (): Promise<WeatherData | null> => {
+    const data = await (async (): Promise<WeatherData | null> => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') return null;
@@ -59,18 +55,9 @@ export function HomeScreen({ navigation }: Props) {
       } catch { return null; }
     })();
 
-    // 3. IP 结果先展示
-    const ipData = await ipPromise;
-    if (ipData) {
-      setWeather(ipData);
-      setWeatherCache(ipData);
-    }
-
-    // 4. GPS 回来再更新
-    const gpsData = await gpsPromise;
-    if (gpsData && gpsData.cityName !== (weather?.cityName ?? ipData?.cityName)) {
-      setWeather(gpsData);
-      setWeatherCache(gpsData);
+    if (data) {
+      setWeather(data);
+      setWeatherCache(data);
     }
   }, []);
 

@@ -1,3 +1,7 @@
+import { AMAP_KEY } from './gaode-config';
+
+const API = 'https://restapi.amap.com/v3';
+
 export interface WeatherData {
   temp: number;
   feelsLike: number;
@@ -19,24 +23,24 @@ export interface ForecastDay {
   description: string;
 }
 
-const CITY_MAP: Record<string, string> = {
-  '北京': 'Beijing', '上海': 'Shanghai', '广州': 'Guangzhou', '深圳': 'Shenzhen',
-  '杭州': 'Hangzhou', '成都': 'Chengdu', '武汉': 'Wuhan', '南京': 'Nanjing',
-  '重庆': 'Chongqing', '西安': "Xi'an", '厦门': 'Xiamen', '长沙': 'Changsha',
-  '天津': 'Tianjin', '苏州': 'Suzhou', '青岛': 'Qingdao', '大连': 'Dalian',
-  '昆明': 'Kunming', '三亚': 'Sanya', '拉萨': 'Lhasa', '香港': 'Hong Kong',
-  '台北': 'Taipei',
-  '浦东': 'Pudong',
+const WEATHER_EMOJI: Record<string, string> = {
+  '晴': '☀️', '多云': '⛅', '阴': '☁️',
+  '小雨': '🌦️', '中雨': '🌧️', '大雨': '🌧️', '暴雨': '🌧️', '大暴雨': '🌧️',
+  '阵雨': '🌦️', '雷阵雨': '⛈️', '雷阵雨伴有冰雹': '⛈️',
+  '小雪': '🌨️', '中雪': '❄️', '大雪': '❄️', '暴雪': '❄️',
+  '雾': '🌫️', '霾': '🌫️', '浮尘': '🌫️', '扬沙': '🌫️',
+  '冻雨': '🌧️', '强沙尘暴': '🌫️',
 };
 
-// 反向映射：拼音/英文 → 中文（用于 API 返回的城市名转中文）
-const REVERSE_CITY_MAP: Record<string, string> = {
-  ...Object.fromEntries(Object.entries(CITY_MAP).map(([cn, en]) => [en, cn])),
-  'Pootung': '浦东',
-};
+export function getWeatherEmoji(weather: string): string {
+  return WEATHER_EMOJI[weather] || '⛅';
+}
 
-function normalizeCity(city: string): string {
-  return CITY_MAP[city.trim()] || city.trim();
+function windPowerToSpeed(level: string): number {
+  const p = parseInt(level);
+  if (isNaN(p)) return 0;
+  const speeds = [0, 1, 5, 10, 18, 28, 38, 50, 62, 75, 88, 102, 117];
+  return speeds[Math.min(p, speeds.length - 1)];
 }
 
 function getDayName(dateStr: string): string {
@@ -44,71 +48,60 @@ function getDayName(dateStr: string): string {
   return days[new Date(dateStr).getDay()];
 }
 
-function wmoToEmoji(code: number): string {
-  // WMO 天气代码 → emoji
-  if (code === 0) return '☀️';
-  if (code <= 3) return '⛅';
-  if (code <= 48) return '🌫️';
-  if (code <= 57) return '🌧️';
-  if (code <= 67) return '🌧️';
-  if (code <= 77) return '❄️';
-  if (code <= 82) return '🌧️';
-  if (code <= 86) return '❄️';
-  if (code <= 99) return '⛈️';
-  return '⛅';
+async function getAdcodeByCoords(lat: number, lon: number): Promise<string> {
+  const url = `${API}/geocode/regeo?key=${AMAP_KEY}&location=${lon},${lat}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (data.status !== '1') throw new Error(data.info || '逆地理编码失败');
+  return data.regeocode.addressComponent.adcode;
 }
 
-export function getWeatherEmoji(iconCode: string): string {
-  return iconCode || '⛅';
+async function getAdcodeByCity(city: string): Promise<string> {
+  const url = `${API}/geocode/geo?key=${AMAP_KEY}&address=${encodeURIComponent(city)}&city=${encodeURIComponent(city)}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (data.status !== '1' || !data.geocodes?.length) throw new Error('未找到该城市');
+  return data.geocodes[0].adcode;
 }
 
-function parseWeatherResponse(data: any): WeatherData {
-  const current = data.current_condition?.[0];
-  if (!current) throw new Error('无法解析天气数据');
+async function fetchWeatherByAdcode(adcode: string): Promise<WeatherData> {
+  const url = `${API}/weather/weatherInfo?key=${AMAP_KEY}&city=${adcode}&extensions=all`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (data.status !== '1') throw new Error(data.info || '获取天气失败');
 
-  const rawCityName = data.nearest_area?.[0]?.areaName?.[0]?.value || '未知';
-  const cityName = REVERSE_CITY_MAP[rawCityName] || rawCityName;
+  const live = data.lives?.[0];
+  const forecast = data.forecasts?.[0];
+  if (!live || !forecast) throw new Error('天气数据为空');
 
-  const forecast: ForecastDay[] = (data.weather || []).slice(0, 5).map((day: any) => ({
-    day: getDayName(day.date),
-    icon: wmoToEmoji(parseInt(day.hourly?.[0]?.weatherCode || '0')).toString(),
-    tempMin: parseInt(day.mintempC),
-    tempMax: parseInt(day.maxtempC),
-    description: day.hourly?.[0]?.lang_zh?.[0]?.value || day.hourly?.[0]?.weatherDesc?.[0]?.value || '',
-  }));
+  const casts = forecast.casts || [];
 
   return {
-    temp: parseInt(current.temp_C),
-    feelsLike: parseInt(current.FeelsLikeC),
-    humidity: parseInt(current.humidity),
-    windSpeed: Math.round(parseInt(current.windspeedKmph) / 3.6 * 10) / 10,
-    description: current.lang_zh?.[0]?.value || current.weatherDesc?.[0]?.value || '',
-    icon: wmoToEmoji(parseInt(current.weatherCode || '0')).toString(),
-    cityName,
-    tempMin: parseInt(data.weather?.[0]?.mintempC || current.temp_C),
-    tempMax: parseInt(data.weather?.[0]?.maxtempC || current.temp_C),
-    forecast,
+    temp: parseInt(live.temperature),
+    feelsLike: parseInt(live.temperature),
+    humidity: parseInt(live.humidity),
+    windSpeed: windPowerToSpeed(live.windpower),
+    description: live.weather,
+    icon: getWeatherEmoji(live.weather),
+    cityName: live.city,
+    tempMin: casts[0] ? parseInt(casts[0].nighttemp) : parseInt(live.temperature),
+    tempMax: casts[0] ? parseInt(casts[0].daytemp) : parseInt(live.temperature),
+    forecast: casts.slice(0, 5).map((c: any) => ({
+      day: getDayName(c.date),
+      icon: getWeatherEmoji(c.dayweather),
+      tempMin: parseInt(c.nighttemp),
+      tempMax: parseInt(c.daytemp),
+      description: c.dayweather,
+    })),
   };
 }
 
 export async function fetchWeatherByCoords(lat: number, lon: number): Promise<WeatherData> {
-  const url = `https://wttr.in/${lat},${lon}?format=j1&lang=zh`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('获取天气失败');
-  return parseWeatherResponse(await res.json());
-}
-
-/** 通过 IP 定位获取天气（不依赖 GPS 硬件），作为 GPS 不可用时的降级方案 */
-export async function fetchWeatherByIP(): Promise<WeatherData> {
-  const url = `https://wttr.in?format=j1&lang=zh`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('获取天气失败');
-  return parseWeatherResponse(await res.json());
+  const adcode = await getAdcodeByCoords(lat, lon);
+  return fetchWeatherByAdcode(adcode);
 }
 
 export async function fetchWeatherByCity(city: string): Promise<WeatherData> {
-  const url = `https://wttr.in/${encodeURIComponent(normalizeCity(city))}?format=j1&lang=zh`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('未找到该城市');
-  return parseWeatherResponse(await res.json());
+  const adcode = await getAdcodeByCity(city);
+  return fetchWeatherByAdcode(adcode);
 }

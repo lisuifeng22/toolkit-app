@@ -49,7 +49,7 @@
 - **导航**: React Navigation v7 (Drawer + Native Stack)
 - **存储**: AsyncStorage（本地持久化）
 - **定位**: expo-location
-- **天气**: wttr.in API（无需 API Key）
+- **天气**: 高德地图 Web 服务 API
 - **日期选择**: @react-native-community/datetimepicker
 - **主题**: 紫色系毛玻璃风格，统一间距/圆角规范
 

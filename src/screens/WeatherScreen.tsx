@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, TextInput, ActivityIndicator, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import * as Location from 'expo-location';
 import { Colors, Layout } from '../constants/Colors';
-import { fetchWeatherByCoords, fetchWeatherByCity, fetchWeatherByIP, getWeatherEmoji, WeatherData } from '../services/weather';
+import { fetchWeatherByCoords, fetchWeatherByCity, getWeatherEmoji, WeatherData } from '../services/weather';
 import { loadLocations, saveLocation, removeLocation } from '../storage/weather-locations';
 import { getWeatherCache, setWeatherCache } from '../storage/weather-cache';
 
@@ -21,7 +21,7 @@ export function WeatherScreen() {
   const loadWeather = useCallback(async () => {
     setError('');
 
-    // 1. 有缓存直接展示，不转圈
+    // 1. 有缓存直接展示
     const cached = await getWeatherCache();
     if (cached) {
       setWeather(cached);
@@ -30,10 +30,8 @@ export function WeatherScreen() {
       setLoading(true);
     }
 
-    // 2. IP 定位和 GPS 定位同时发起（并行）
-    const ipPromise = fetchWeatherByIP().catch(() => null);
-
-    const gpsPromise = (async (): Promise<WeatherData | null> => {
+    // 2. GPS 定位（5 秒超时）
+    const data = await (async (): Promise<WeatherData | null> => {
       try {
         if (!await Location.hasServicesEnabledAsync()) return null;
         if ((await Location.requestForegroundPermissionsAsync()).status !== 'granted') return null;
@@ -46,22 +44,14 @@ export function WeatherScreen() {
       } catch { return null; }
     })();
 
-    // 3. IP 通常更快，先展示
-    const ipData = await ipPromise;
-    if (ipData) {
-      setWeather(ipData);
-      setWeatherCache(ipData);
-      if (!cached) setLoading(false);
+    if (data) {
+      setWeather(data);
+      setWeatherCache(data);
+    } else if (!cached) {
+      setError('定位失败，请搜索城市');
     }
 
-    // 4. GPS 结果回来再更新（更精确）
-    const gpsData = await gpsPromise;
-    if (gpsData && gpsData.cityName !== (weather?.cityName ?? ipData?.cityName)) {
-      setWeather(gpsData);
-      setWeatherCache(gpsData);
-    }
-
-    if (!cached && !ipData) setLoading(false);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -225,7 +215,7 @@ export function WeatherScreen() {
             ))}
           </View>
 
-          <Text style={styles.note}>数据来自 wttr.in</Text>
+          <Text style={styles.note}>数据来自高德地图</Text>
         </>
       )}
     </ScrollView>
