@@ -1,8 +1,15 @@
-# Toolkit App v2.0.5
+# Toolkit App v2.0.6
 
 一个功能丰富的移动端工具集合应用，基于 **React Native (Expo SDK 56)** 构建，支持 Android 和 Web 平台。
 
 ## 更新日志
+
+### v2.0.6 — IP 定位兜底，三路并行定位
+
+**🌐 定位彻底修复**
+- GPS High（5s 限时）→ Balanced（5s 限时）→ IP 定位兜底
+- IP 定位使用高德 IP API，不需要任何系统设置和权限，有网就能用
+- 去掉了 `hasServicesEnabledAsync` 阻塞，系统定位关闭也不影响 IP 定位
 
 ### v2.0.5 — GPS 并行双定位
 

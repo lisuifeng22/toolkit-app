@@ -109,3 +109,13 @@ export async function fetchWeatherByCity(city: string): Promise<WeatherData> {
   const adcode = await getAdcodeByCity(city);
   return fetchWeatherByAdcode(adcode);
 }
+
+/** 高德 IP 定位 → adcode → 天气数据（不需要任何权限和系统设置） */
+export async function fetchWeatherByIP(): Promise<WeatherData> {
+  const url = `https://restapi.amap.com/v3/ip?key=${AMAP_KEY}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (data.status !== '1') throw new Error(data.info || 'IP 定位失败');
+  if (!data.adcode) throw new Error('IP 定位未获取到城市信息');
+  return fetchWeatherByAdcode(data.adcode);
+}

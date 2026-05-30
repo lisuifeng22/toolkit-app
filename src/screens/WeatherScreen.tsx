@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, TextInput, ActivityIndicator, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import * as Location from 'expo-location';
 import { Colors, Layout } from '../constants/Colors';
-import { fetchWeatherByCoords, fetchWeatherByCity, getWeatherEmoji, WeatherData } from '../services/weather';
+import { fetchWeatherByCoords, fetchWeatherByCity, fetchWeatherByIP, getWeatherEmoji, WeatherData } from '../services/weather';
 import { loadLocations, saveLocation, removeLocation } from '../storage/weather-locations';
 import { getWeatherCache, setWeatherCache } from '../storage/weather-cache';
 
@@ -30,46 +30,45 @@ export function WeatherScreen() {
       setLoading(true);
     }
 
-    // 2. 定位：先试 GPS（High），超时降级到网络定位（Balanced）
+    // 2. 三路定位：GPS High → Balanced → IP 兜底
     const data = await (async (): Promise<WeatherData | null> => {
       try {
-        const enabled = await Location.hasServicesEnabledAsync();
-        if (!enabled) {
-          console.warn('[定位] GPS 服务未开启');
-          return null;
-        }
-
         const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          console.warn('[定位] 权限被拒绝:', status);
-          return null;
-        }
+        let weather: WeatherData | null = null;
 
-        // 并行发起 GPS 高精度和网络定位
-        const highPromise = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }).catch(() => null);
-        const balancedPromise = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).catch(() => null);
+        if (status === 'granted') {
+          // 并行发起 GPS 和网络定位
+          const highPromise = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }).catch(() => null);
+          const balancedPromise = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).catch(() => null);
 
-        // 等 5 秒，GPS 有结果就用 GPS
-        let loc = await Promise.race([
-          highPromise,
-          new Promise<null>(resolve => setTimeout(() => resolve(null), 5000)),
-        ]);
+          // 先等 5s 看 GPS High 结果
+          const loc = await Promise.race([
+            highPromise,
+            new Promise<null>(resolve => setTimeout(() => resolve(null), 5000)),
+          ]);
 
-        if (loc) {
-          console.log('[定位] GPS 高精度 5s 内定位成功');
-        } else {
-          // GPS 超时，取网络定位（应该已经返回了）
-          loc = await balancedPromise;
           if (loc) {
-            console.log('[定位] 5s 超时，使用网络定位');
+            console.log('[定位] GPS 高精度 5s 内定位成功');
+            weather = await fetchWeatherByCoords(loc.coords.latitude, loc.coords.longitude);
           } else {
-            console.warn('[定位] 网络定位也失败');
-            return null;
+            // GPS 超时，取网络定位（已经跑了 5s，应该已返回）
+            const loc2 = await balancedPromise;
+            if (loc2) {
+              console.log('[定位] 5s 超时，使用网络定位');
+              weather = await fetchWeatherByCoords(loc2.coords.latitude, loc2.coords.longitude);
+            }
           }
+        } else {
+          console.warn('[定位] 权限被拒绝，跳过 GPS/网络定位');
         }
 
-        console.log('[定位] 坐标:', loc.coords.latitude, loc.coords.longitude);
-        return await fetchWeatherByCoords(loc.coords.latitude, loc.coords.longitude);
+        // GPS/网络定位都没拿到，用 IP 兜底（零权限、零设置依赖）
+        if (!weather) {
+          console.log('[定位] 使用 IP 定位兜底');
+          weather = await fetchWeatherByIP();
+        }
+
+        return weather;
       } catch (e) {
         console.error('[定位] 异常:', e);
         return null;
