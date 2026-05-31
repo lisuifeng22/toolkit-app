@@ -47,14 +47,19 @@ export function CountdownEditorScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background, padding: Layout.spacing.md },
   input: {
-    fontSize: 16, color: Colors.textPrimary,
-    backgroundColor: Colors.card, borderRadius: Layout.radius.large,
-    padding: Layout.spacing.md, marginBottom: Layout.spacing.md,
+    fontSize: 16,
+    color: Colors.textPrimary,
+    backgroundColor: Colors.card,
+    borderRadius: Layout.radius.large,
+    padding: Layout.spacing.md,
+    marginBottom: Layout.spacing.md,
     ...Layout.shadow.light,
   },
   saveBtn: {
-    backgroundColor: Colors.primary, borderRadius: Layout.radius.base,
-    padding: Layout.spacing.md, alignItems: 'center',
+    backgroundColor: Colors.primary,
+    borderRadius: Layout.radius.base,
+    padding: Layout.spacing.md,
+    alignItems: 'center',
   },
   saveText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

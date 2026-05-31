@@ -11,12 +11,7 @@ interface CardProps {
 }
 
 export function Card({ children, onPress, style, color, noBackground }: CardProps) {
-  const cardStyle = [
-    styles.card,
-    noBackground && styles.noBg,
-    color ? { backgroundColor: color } : undefined,
-    style,
-  ];
+  const cardStyle = [styles.card, noBackground && styles.noBg, color ? { backgroundColor: color } : undefined, style];
 
   if (onPress) {
     return (

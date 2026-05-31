@@ -1,8 +1,25 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, TextInput, ActivityIndicator, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  ActivityIndicator,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
+} from 'react-native';
 import * as Location from 'expo-location';
 import { Colors, Layout } from '../constants/Colors';
-import { fetchWeatherByCoords, fetchWeatherByCity, fetchWeatherByIP, getWeatherEmoji, WeatherData } from '../services/weather';
+import {
+  fetchWeatherByCoords,
+  fetchWeatherByCity,
+  fetchWeatherByIP,
+  getWeatherEmoji,
+  getSourceLabel,
+  getSourceHint,
+  WeatherData,
+} from '../services/weather';
 import { loadLocations, saveLocation, removeLocation } from '../storage/weather-locations';
 import { getWeatherCache, setWeatherCache } from '../storage/weather-cache';
 
@@ -15,75 +32,91 @@ export function WeatherScreen() {
   const [error, setError] = useState('');
   const [searchText, setSearchText] = useState('');
   const [savedLocations, setSavedLocations] = useState<string[]>([]);
+  const [sourceHint, setSourceHint] = useState<string | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadWeather = useCallback(async () => {
     setError('');
+    setSourceHint(null);
 
-    // 1. 有缓存直接展示
-    const cached = await getWeatherCache();
-    if (cached) {
-      setWeather(cached);
-      setLoading(false);
-    } else {
-      setLoading(true);
-    }
-
-    // 2. 三路定位：GPS High → Balanced → IP 兜底
-    const data = await (async (): Promise<WeatherData | null> => {
+    const doPosition = async (): Promise<WeatherData | null> => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
-        let weather: WeatherData | null = null;
 
         if (status === 'granted') {
-          // 并行发起 GPS 和网络定位
           const highPromise = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }).catch(() => null);
-          const balancedPromise = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).catch(() => null);
+          const balancedPromise = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).catch(
+            () => null,
+          );
 
-          // 先等 5s 看 GPS High 结果
           const loc = await Promise.race([
             highPromise,
-            new Promise<null>(resolve => setTimeout(() => resolve(null), 5000)),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)),
           ]);
 
           if (loc) {
             console.log('[定位] GPS 高精度 5s 内定位成功');
-            weather = await fetchWeatherByCoords(loc.coords.latitude, loc.coords.longitude);
-          } else {
-            // GPS 超时，取网络定位（已经跑了 5s，应该已返回）
-            const loc2 = await balancedPromise;
-            if (loc2) {
-              console.log('[定位] 5s 超时，使用网络定位');
-              weather = await fetchWeatherByCoords(loc2.coords.latitude, loc2.coords.longitude);
-            }
+            return fetchWeatherByCoords(loc.coords.latitude, loc.coords.longitude, 'gps');
+          }
+
+          const loc2 = await balancedPromise;
+          if (loc2) {
+            console.log('[定位] 5s 超时，使用网络定位');
+            return fetchWeatherByCoords(loc2.coords.latitude, loc2.coords.longitude, 'balanced');
           }
         } else {
-          console.warn('[定位] 权限被拒绝，跳过 GPS/网络定位');
+          console.warn('[定位] 权限被拒绝');
         }
-
-        // GPS/网络定位都没拿到，用 IP 兜底（零权限、零设置依赖）
-        if (!weather) {
-          console.log('[定位] 使用 IP 定位兜底');
-          weather = await fetchWeatherByIP();
-        }
-
-        return weather;
       } catch (e) {
         console.error('[定位] 异常:', e);
-        return null;
       }
-    })();
 
-    if (data) {
-      setWeather(data);
-      setWeatherCache(data);
-    } else if (!cached) {
-      setError('定位失败，请搜索城市');
+      return null;
+    };
+
+    try {
+      // 先尝试缓存
+      // 由于不清楚 adcode, 先定位再匹配缓存
+      const data = await doPosition();
+
+      if (data) {
+        // 查看缓存, 有缓存且来源一致则复用
+        const cached = await getWeatherCache(data.cityAdcode, data.source);
+        if (cached) {
+          setWeather(cached);
+          setSourceHint(getSourceHint(cached.source));
+          setLoading(false);
+          return;
+        }
+
+        setWeather(data);
+        setWeatherCache(data);
+        setSourceHint(getSourceHint(data.source));
+      } else {
+        // GPS/网络定位都失败, IP 兜底
+        console.log('[定位] 使用 IP 定位兜底');
+        const ipData = await fetchWeatherByIP();
+
+        // 检查 IP 缓存
+        const cached = await getWeatherCache(ipData.cityAdcode, 'ip');
+        if (cached) {
+          setWeather(cached);
+        } else {
+          setWeather(ipData);
+          setWeatherCache(ipData);
+        }
+        setSourceHint(getSourceHint('ip'));
+      }
+    } catch (e: unknown) {
+      console.error('[定位/天气] 错误:', e);
+      if (!weather) {
+        setError(e instanceof Error ? e.message : '获取天气失败, 请搜索城市');
+      }
     }
 
     setLoading(false);
-  }, []);
+  }, [weather]);
 
   useEffect(() => {
     loadLocations().then(setSavedLocations);
@@ -91,9 +124,10 @@ export function WeatherScreen() {
 
     const msUntilHalfHour = () => {
       const now = new Date();
-      const next = now.getMinutes() < 30
-        ? new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), 30, 0, 0)
-        : new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1, 0, 0, 0);
+      const next =
+        now.getMinutes() < 30
+          ? new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), 30, 0, 0)
+          : new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1, 0, 0, 0);
       return next.getTime() - now.getTime();
     };
 
@@ -106,17 +140,28 @@ export function WeatherScreen() {
       clearTimeout(timeout);
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [loadWeather]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const searchCity = async (city: string) => {
     if (!city.trim()) return;
     setSearching(true);
     setError('');
+    setSourceHint(null);
     try {
+      // 先查缓存
+      // 手动搜索没有 adcode, 先请求
       const data = await fetchWeatherByCity(city.trim());
-      setWeather(data);
-    } catch (e: any) {
-      setError(e.message || '未找到该城市');
+      // 检查手动缓存
+      const cached = await getWeatherCache(data.cityAdcode, 'manual');
+      if (cached) {
+        setWeather(cached);
+      } else {
+        setWeather(data);
+        setWeatherCache(data);
+      }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : '未找到该城市');
     }
     setSearching(false);
   };
@@ -136,10 +181,14 @@ export function WeatherScreen() {
   const handleRemoveLocation = (city: string) => {
     Alert.alert('删除位置', `确定删除「${city}」吗？`, [
       { text: '取消', style: 'cancel' },
-      { text: '删除', style: 'destructive', onPress: async () => {
-        const list = await removeLocation(city);
-        setSavedLocations(list);
-      }},
+      {
+        text: '删除',
+        style: 'destructive',
+        onPress: async () => {
+          const list = await removeLocation(city);
+          setSavedLocations(list);
+        },
+      },
     ]);
   };
 
@@ -169,14 +218,19 @@ export function WeatherScreen() {
         <TouchableOpacity style={styles.refreshBtn} onPress={loadWeather} activeOpacity={0.85}>
           <Text style={styles.refreshBtnText}>⟳</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.searchBtn} onPress={() => searchCity(searchText)} disabled={searching} activeOpacity={0.85}>
+        <TouchableOpacity
+          style={styles.searchBtn}
+          onPress={() => searchCity(searchText)}
+          disabled={searching}
+          activeOpacity={0.85}
+        >
           <Text style={styles.searchBtnText}>{searching ? '...' : '搜索'}</Text>
         </TouchableOpacity>
       </View>
 
       {savedLocations.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
-          {savedLocations.map(city => (
+          {savedLocations.map((city) => (
             <TouchableOpacity
               key={city}
               style={[styles.chip, styles.savedChip]}
@@ -194,14 +248,25 @@ export function WeatherScreen() {
         <TouchableOpacity style={styles.chip} onPress={loadWeather} activeOpacity={0.85}>
           <Text style={styles.chipText}>📍 当前位置</Text>
         </TouchableOpacity>
-        {POPULAR_CITIES.map(city => (
+        {POPULAR_CITIES.map((city) => (
           <TouchableOpacity key={city} style={styles.chip} onPress={() => searchCity(city)} activeOpacity={0.85}>
             <Text style={styles.chipText}>{city}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : null}
+
+      {sourceHint ? (
+        <View style={styles.sourceHint}>
+          <Text style={styles.sourceHintText}>{sourceHint}</Text>
+        </View>
+      ) : null}
 
       {searching && (
         <ActivityIndicator size="small" color={Colors.primary} style={{ marginVertical: Layout.spacing.md }} />
@@ -214,10 +279,17 @@ export function WeatherScreen() {
               <Text style={styles.saveBtnText}>{isSaved ? '★ 已收藏' : '☆ 收藏'}</Text>
             </TouchableOpacity>
 
-            <Text style={styles.emoji}>{getWeatherEmoji(weather.icon)}</Text>
+            {/* 定位来源标签 */}
+            <View style={styles.sourceBadge}>
+              <Text style={styles.sourceBadgeText}>{getSourceLabel(weather.source)}</Text>
+            </View>
+
+            <Text style={styles.cityEmoji}>{getWeatherEmoji(weather.icon)}</Text>
             <Text style={styles.temp}>{weather.temp}°</Text>
             <Text style={styles.city}>{weather.cityName}</Text>
-            <Text style={styles.desc}>{weather.description} · 体感 {weather.feelsLike}°</Text>
+            <Text style={styles.desc}>
+              {weather.description} · 体感 {weather.feelsLike}°
+            </Text>
             <View style={styles.details}>
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>💧 湿度</Text>
@@ -229,7 +301,9 @@ export function WeatherScreen() {
               </View>
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>🌡 范围</Text>
-                <Text style={styles.detailValue}>{weather.tempMin}~{weather.tempMax}°</Text>
+                <Text style={styles.detailValue}>
+                  {weather.tempMin}~{weather.tempMax}°
+                </Text>
               </View>
             </View>
           </View>
@@ -241,7 +315,9 @@ export function WeatherScreen() {
                 <Text style={styles.forecastDay}>{day.day}</Text>
                 <Text style={styles.forecastIcon}>{getWeatherEmoji(day.icon)}</Text>
                 <Text style={styles.forecastDesc}>{day.description}</Text>
-                <Text style={styles.forecastTemp}>{day.tempMin}° / {day.tempMax}°</Text>
+                <Text style={styles.forecastTemp}>
+                  {day.tempMin}° / {day.tempMax}°
+                </Text>
               </View>
             ))}
           </View>
@@ -256,70 +332,136 @@ export function WeatherScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: { padding: Layout.spacing.md, paddingBottom: 40 },
-  center: { flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', padding: Layout.spacing.md },
+  center: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Layout.spacing.md,
+  },
   loadingText: { fontSize: 14, color: Colors.textSecondary, marginTop: Layout.spacing.md },
-  errorText: { fontSize: 14, color: Colors.danger, textAlign: 'center', marginBottom: Layout.spacing.sm },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF2F2',
+    borderRadius: Layout.radius.base,
+    padding: Layout.spacing.md,
+    marginBottom: Layout.spacing.sm,
+  },
+  errorIcon: { fontSize: 16, marginRight: Layout.spacing.sm },
+  errorText: { fontSize: 13, color: Colors.danger, flex: 1 },
+  sourceHint: {
+    backgroundColor: '#FFFBEB',
+    borderRadius: Layout.radius.base,
+    padding: Layout.spacing.sm,
+    marginBottom: Layout.spacing.sm,
+  },
+  sourceHintText: { fontSize: 12, color: Colors.warning, textAlign: 'center' },
 
   searchRow: { flexDirection: 'row', gap: Layout.spacing.sm, marginBottom: Layout.spacing.sm },
   searchInput: {
-    flex: 1, height: 40, borderRadius: Layout.radius.base, backgroundColor: Colors.card,
-    paddingHorizontal: Layout.spacing.md, fontSize: 14, color: Colors.textPrimary,
-    borderWidth: 1, borderColor: Colors.border,
+    flex: 1,
+    height: 40,
+    borderRadius: Layout.radius.base,
+    backgroundColor: Colors.card,
+    paddingHorizontal: Layout.spacing.md,
+    fontSize: 14,
+    color: Colors.textPrimary,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   searchBtn: {
-    height: 40, paddingHorizontal: Layout.spacing.lg, backgroundColor: Colors.primary,
-    borderRadius: Layout.radius.base, alignItems: 'center', justifyContent: 'center',
+    height: 40,
+    paddingHorizontal: Layout.spacing.lg,
+    backgroundColor: Colors.primary,
+    borderRadius: Layout.radius.base,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
   refreshBtn: {
-    width: 40, height: 40, borderRadius: Layout.radius.base, backgroundColor: Colors.card,
-    borderWidth: 1, borderColor: Colors.border,
-    alignItems: 'center', justifyContent: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: Layout.radius.base,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   refreshBtnText: { fontSize: 18, color: Colors.primary },
 
   chipsRow: { marginBottom: Layout.spacing.sm },
   chip: {
-    paddingHorizontal: Layout.spacing.md, paddingVertical: 6, borderRadius: 16,
-    backgroundColor: Colors.card, marginRight: Layout.spacing.sm,
-    borderWidth: 1, borderColor: Colors.border,
+    paddingHorizontal: Layout.spacing.md,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: Colors.card,
+    marginRight: Layout.spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   savedChip: { backgroundColor: Colors.primaryLighter, borderColor: Colors.primary },
   chipText: { fontSize: 12, color: Colors.textSecondary },
 
   currentCard: {
     backgroundColor: Colors.primaryLight,
-    borderRadius: Layout.radius.large, padding: Layout.spacing.xl,
-    alignItems: 'center', marginBottom: Layout.spacing.md,
+    borderRadius: Layout.radius.large,
+    padding: Layout.spacing.xl,
+    paddingTop: Layout.spacing.lg,
+    alignItems: 'center',
+    marginBottom: Layout.spacing.md,
     ...Layout.shadow.light,
   },
   saveBtn: {
-    position: 'absolute', top: Layout.spacing.md, right: Layout.spacing.md,
-    paddingHorizontal: Layout.spacing.md, paddingVertical: 4,
-    borderRadius: Layout.radius.small, backgroundColor: 'rgba(255,255,255,0.7)',
+    position: 'absolute',
+    top: Layout.spacing.md,
+    right: Layout.spacing.md,
+    paddingHorizontal: Layout.spacing.md,
+    paddingVertical: 4,
+    borderRadius: Layout.radius.small,
+    backgroundColor: 'rgba(255,255,255,0.7)',
   },
   saveBtnText: { fontSize: 12, color: Colors.primary, fontWeight: '600' },
-  emoji: { fontSize: 48, marginBottom: Layout.spacing.sm },
+  sourceBadge: {
+    backgroundColor: 'rgba(124,58,237,0.15)',
+    paddingHorizontal: Layout.spacing.sm,
+    paddingVertical: 2,
+    borderRadius: Layout.radius.small,
+    marginBottom: Layout.spacing.sm,
+  },
+  sourceBadgeText: { fontSize: 11, color: Colors.primary, fontWeight: '500' },
+  cityEmoji: { fontSize: 48, marginBottom: Layout.spacing.sm },
   temp: { fontSize: 48, fontWeight: '700', color: Colors.primary },
   city: { fontSize: 20, fontWeight: '600', color: Colors.textPrimary, marginTop: Layout.spacing.xs },
   desc: { fontSize: 14, color: Colors.textSecondary, marginTop: 4 },
   details: {
-    flexDirection: 'row', justifyContent: 'space-around',
-    width: '100%', marginTop: Layout.spacing.lg,
-    paddingTop: Layout.spacing.lg, borderTopWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginTop: Layout.spacing.lg,
+    paddingTop: Layout.spacing.lg,
+    borderTopWidth: 1,
     borderTopColor: 'rgba(124,58,237,0.15)',
   },
   detailItem: { alignItems: 'center' },
   detailLabel: { fontSize: 14, color: Colors.textSecondary },
   detailValue: { fontSize: 16, fontWeight: '600', color: Colors.textPrimary, marginTop: 2 },
 
-  forecast: { backgroundColor: Colors.card, borderRadius: Layout.radius.large, padding: Layout.spacing.md, ...Layout.shadow.light },
+  forecast: {
+    backgroundColor: Colors.card,
+    borderRadius: Layout.radius.large,
+    padding: Layout.spacing.md,
+    ...Layout.shadow.light,
+  },
   sectionTitle: { fontSize: 16, fontWeight: '600', color: Colors.textPrimary, marginBottom: Layout.spacing.md },
   forecastRow: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: Layout.spacing.md,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
   forecastDay: { fontSize: 14, color: Colors.textSecondary, width: 50 },
   forecastIcon: { fontSize: 18 },

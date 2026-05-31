@@ -12,11 +12,10 @@ import { loadAnniversaries } from '../storage/anniversaries';
 import { getDaysRemaining, getDaysSince, formatDate } from '../utils/dates';
 import { fetchWeatherByCoords, fetchWeatherByIP, getWeatherEmoji, WeatherData } from '../services/weather';
 import * as Location from 'expo-location';
-import { getWeatherCache, setWeatherCache } from '../storage/weather-cache';
-import { Note, Todo, Countdown, Birthday, Anniversary } from '../types';
-
+import { setWeatherCache } from '../storage/weather-cache';
+import { RootDrawerParamList, Note, Todo, Countdown, Birthday, Anniversary } from '../types';
 type Props = {
-  navigation: DrawerNavigationProp<any>;
+  navigation: DrawerNavigationProp<RootDrawerParamList>;
 };
 
 export function HomeScreen({ navigation }: Props) {
@@ -37,65 +36,64 @@ export function HomeScreen({ navigation }: Props) {
   }, []);
 
   const loadWeather = useCallback(async () => {
-    const cached = await getWeatherCache();
-    if (cached) {
-      setWeather(cached);
-    }
-
     const data = await (async (): Promise<WeatherData | null> => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
-        let weather: WeatherData | null = null;
 
         if (status === 'granted') {
-          // 并行发起 GPS 和网络定位
           const highPromise = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }).catch(() => null);
-          const balancedPromise = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).catch(() => null);
+          const balancedPromise = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).catch(
+            () => null,
+          );
 
-          // 先等 5s 看 GPS High 结果
           const loc = await Promise.race([
             highPromise,
-            new Promise<null>(resolve => setTimeout(() => resolve(null), 5000)),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)),
           ]);
 
           if (loc) {
             console.log('[定位] GPS 高精度 5s 内定位成功');
-            weather = await fetchWeatherByCoords(loc.coords.latitude, loc.coords.longitude);
-          } else {
-            // GPS 超时，取网络定位（已经跑了 5s，应该已返回）
-            const loc2 = await balancedPromise;
-            if (loc2) {
-              console.log('[定位] 5s 超时，使用网络定位');
-              weather = await fetchWeatherByCoords(loc2.coords.latitude, loc2.coords.longitude);
-            }
+            const w = await fetchWeatherByCoords(loc.coords.latitude, loc.coords.longitude, 'gps');
+            return w;
+          }
+
+          const loc2 = await balancedPromise;
+          if (loc2) {
+            console.log('[定位] 5s 超时，使用网络定位');
+            const w = await fetchWeatherByCoords(loc2.coords.latitude, loc2.coords.longitude, 'balanced');
+            return w;
           }
         } else {
-          console.warn('[定位] 权限被拒绝，跳过 GPS/网络定位');
+          console.warn('[定位] 权限被拒绝');
         }
-
-        // GPS/网络定位都没拿到，用 IP 兜底
-        if (!weather) {
-          console.log('[定位] 使用 IP 定位兜底');
-          weather = await fetchWeatherByIP();
-        }
-
-        return weather;
       } catch (e) {
         console.error('[定位] 异常:', e);
-        return null;
       }
+
+      return null;
     })();
 
     if (data) {
       setWeather(data);
       setWeatherCache(data);
+    } else {
+      // IP 兜底
+      try {
+        const ipData = await fetchWeatherByIP();
+        setWeather(ipData);
+        setWeatherCache(ipData);
+      } catch (e) {
+        console.error('[IP定位] 失败:', e);
+      }
     }
   }, []);
 
-  useFocusEffect(useCallback(() => {
-    loadData();
-    loadWeather();
-  }, [loadData, loadWeather]));
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+      loadWeather();
+    }, [loadData, loadWeather]),
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -105,39 +103,41 @@ export function HomeScreen({ navigation }: Props) {
   };
 
   const today = new Date();
-  const dateStr = `${today.getMonth() + 1}月${today.getDate()}日 周${['日','一','二','三','四','五','六'][today.getDay()]}`;
+  const dateStr = `${today.getMonth() + 1}月${today.getDate()}日 周${['日', '一', '二', '三', '四', '五', '六'][today.getDay()]}`;
   const hour = today.getHours();
   const greeting = hour < 12 ? '上午好' : hour < 18 ? '下午好' : '晚上好';
 
-  const completedTodos = todos.filter(t => t.completed).length;
+  const completedTodos = todos.filter((t) => t.completed).length;
   const todoProgress = todos.length > 0 ? Math.round((completedTodos / todos.length) * 100) : 0;
   const earliestUncompleted = todos
-    .filter(t => !t.completed)
+    .filter((t) => !t.completed)
     .sort((a, b) => a.createdAt - b.createdAt)
     .slice(0, 4);
 
   const nearestCountdown = countdowns
-    .map(c => ({ ...c, days: getDaysRemaining(c.targetDate) }))
+    .map((c) => ({ ...c, days: getDaysRemaining(c.targetDate) }))
     .sort((a, b) => a.days - b.days)[0];
 
   const sortedBirthdays = birthdays
-    .map(b => ({ ...b, days: getDaysRemaining(b.birthDate), display: formatDate(b.birthDate) }))
+    .map((b) => ({ ...b, days: getDaysRemaining(b.birthDate), display: formatDate(b.birthDate) }))
     .sort((a, b) => a.days - b.days);
 
   const sortedAnniversaries = anniversaries
-    .map(a => ({ ...a, days: getDaysRemaining(a.date), since: getDaysSince(a.date) }))
+    .map((a) => ({ ...a, days: getDaysRemaining(a.date), since: getDaysSince(a.date) }))
     .sort((a, b) => a.days - b.days);
 
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl
-        refreshing={refreshing}
-        onRefresh={onRefresh}
-        tintColor={Colors.primary}
-        colors={[Colors.primary]}
-      />}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={Colors.primary}
+          colors={[Colors.primary]}
+        />
+      }
     >
       {/* Header */}
       <View style={styles.header}>
@@ -146,11 +146,7 @@ export function HomeScreen({ navigation }: Props) {
       </View>
 
       {/* Weather Card - 整行 */}
-      <Card
-        onPress={() => navigation.navigate('Weather')}
-        style={styles.weatherCard}
-        noBackground
-      >
+      <Card onPress={() => navigation.navigate('Weather')} style={styles.weatherCard} noBackground>
         <View style={styles.weatherRow}>
           <View>
             <Text style={styles.weatherLabel}>天气</Text>
@@ -167,17 +163,16 @@ export function HomeScreen({ navigation }: Props) {
           <View style={styles.weatherInfo}>
             <Text style={styles.weatherText}>💧 {weather.humidity}%</Text>
             <Text style={styles.weatherText}>🌬 {weather.windSpeed} km/h</Text>
-            <Text style={styles.weatherText}>🌡 {weather.tempMin}~{weather.tempMax}°</Text>
+            <Text style={styles.weatherText}>
+              🌡 {weather.tempMin}~{weather.tempMax}°
+            </Text>
           </View>
         )}
       </Card>
 
       {/* 第一行：便签 + 待办 */}
       <View style={styles.row}>
-        <Card
-          onPress={() => navigation.navigate('Notes')}
-          style={styles.halfCard}
-        >
+        <Card onPress={() => navigation.navigate('Notes')} style={styles.halfCard}>
           <Text style={styles.cardTitle}>📝 便签</Text>
           <Text style={styles.preview} numberOfLines={2}>
             {notes.length > 0 ? notes[0].content : '暂无便签'}
@@ -185,20 +180,21 @@ export function HomeScreen({ navigation }: Props) {
           <Text style={styles.footer}>共 {notes.length} 条</Text>
         </Card>
 
-        <Card
-          onPress={() => navigation.navigate('Todos')}
-          style={styles.halfCard}
-        >
+        <Card onPress={() => navigation.navigate('Todos')} style={styles.halfCard}>
           <Text style={styles.cardTitle}>✅ 待办</Text>
-          <Text style={styles.todoCount}>已完成 {completedTodos}/{todos.length}</Text>
+          <Text style={styles.todoCount}>
+            已完成 {completedTodos}/{todos.length}
+          </Text>
           <View style={styles.progressBar}>
             <View style={[styles.progressFill, { width: `${todoProgress}%` }]} />
           </View>
           <Text style={styles.progressLabel}>{todoProgress}%</Text>
-          {earliestUncompleted.map(t => (
+          {earliestUncompleted.map((t) => (
             <View key={t.id} style={styles.todoItem}>
               <Text style={styles.todoBullet}>·</Text>
-              <Text style={styles.todoTitle} numberOfLines={1}>{t.title}</Text>
+              <Text style={styles.todoTitle} numberOfLines={1}>
+                {t.title}
+              </Text>
             </View>
           ))}
         </Card>
@@ -206,10 +202,7 @@ export function HomeScreen({ navigation }: Props) {
 
       {/* 第二行：倒计时 + 生日 */}
       <View style={styles.row}>
-        <Card
-          onPress={() => navigation.navigate('Countdowns')}
-          style={styles.halfCard}
-        >
+        <Card onPress={() => navigation.navigate('Countdowns')} style={styles.halfCard}>
           <Text style={styles.cardTitle}>⏱ 倒计时</Text>
           {nearestCountdown ? (
             <>
@@ -221,15 +214,14 @@ export function HomeScreen({ navigation }: Props) {
           )}
         </Card>
 
-        <Card
-          onPress={() => navigation.navigate('Birthdays')}
-          style={styles.halfCard}
-        >
+        <Card onPress={() => navigation.navigate('Birthdays')} style={styles.halfCard}>
           <Text style={styles.cardTitle}>🎂 生日</Text>
           {sortedBirthdays.length > 0 ? (
             <>
               <Text style={styles.bigNumber}>{sortedBirthdays[0].days}天</Text>
-              <Text style={styles.eventLabel}>{sortedBirthdays[0].name} {sortedBirthdays[0].display}</Text>
+              <Text style={styles.eventLabel}>
+                {sortedBirthdays[0].name} {sortedBirthdays[0].display}
+              </Text>
             </>
           ) : (
             <Text style={styles.emptyText}>暂无生日</Text>
@@ -239,10 +231,7 @@ export function HomeScreen({ navigation }: Props) {
 
       {/* 第三行：纪念日 + 密码本 */}
       <View style={styles.row}>
-        <Card
-          onPress={() => navigation.navigate('Anniversaries')}
-          style={styles.halfCard}
-        >
+        <Card onPress={() => navigation.navigate('Anniversaries')} style={styles.halfCard}>
           <Text style={styles.cardTitle}>❤️ 纪念日</Text>
           {sortedAnniversaries.length > 0 ? (
             <>
@@ -255,11 +244,7 @@ export function HomeScreen({ navigation }: Props) {
           )}
         </Card>
 
-        <Card
-          onPress={() => navigation.navigate('Password')}
-          style={styles.halfCard}
-          color={Colors.primaryLighter}
-        >
+        <Card onPress={() => navigation.navigate('Password')} style={styles.halfCard} color={Colors.primaryLighter}>
           <Text style={styles.cardTitle}>🔒 密码本</Text>
           <Text style={styles.bigNumber}>已锁定</Text>
           <Text style={styles.eventLabel}>点击验证</Text>
@@ -292,8 +277,11 @@ const styles = StyleSheet.create({
   weatherCity: { fontSize: 14, color: Colors.textPrimary },
   weatherDesc: { fontSize: 14, color: Colors.textSecondary, marginTop: 2 },
   weatherInfo: {
-    flexDirection: 'row', gap: 16, marginTop: Layout.spacing.sm,
-    paddingTop: Layout.spacing.sm, borderTopWidth: 1,
+    flexDirection: 'row',
+    gap: 16,
+    marginTop: Layout.spacing.sm,
+    paddingTop: Layout.spacing.sm,
+    borderTopWidth: 1,
     borderTopColor: 'rgba(124,58,237,0.15)',
   },
   weatherText: { fontSize: 12, color: Colors.textSecondary },
@@ -308,8 +296,11 @@ const styles = StyleSheet.create({
   footer: { fontSize: 12, color: Colors.textPlaceholder, marginTop: Layout.spacing.xs },
   todoCount: { fontSize: 14, color: Colors.textSecondary },
   progressBar: {
-    height: 8, backgroundColor: Colors.gray, borderRadius: 4,
-    marginTop: Layout.spacing.sm, overflow: 'hidden',
+    height: 8,
+    backgroundColor: Colors.gray,
+    borderRadius: 4,
+    marginTop: Layout.spacing.sm,
+    overflow: 'hidden',
   },
   progressFill: { height: '100%', backgroundColor: Colors.primary, borderRadius: 4 },
   progressLabel: { fontSize: 12, color: Colors.textPlaceholder, marginTop: Layout.spacing.xs },

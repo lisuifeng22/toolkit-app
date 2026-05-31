@@ -1,28 +1,21 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const KEY = '@toolkit_weather_locations';
+import { loadData, saveData, KEYS } from './index';
 
 export async function loadLocations(): Promise<string[]> {
-  try {
-    const json = await AsyncStorage.getItem(KEY);
-    return json ? JSON.parse(json) : [];
-  } catch {
-    return [];
-  }
+  return loadData<string>(KEYS.WEATHER_LOCATIONS);
 }
 
 export async function saveLocation(city: string): Promise<string[]> {
   const list = await loadLocations();
   if (!list.includes(city)) {
     list.push(city);
-    await AsyncStorage.setItem(KEY, JSON.stringify(list));
+    await saveData(KEYS.WEATHER_LOCATIONS, list);
   }
   return list;
 }
 
 export async function removeLocation(city: string): Promise<string[]> {
   const list = await loadLocations();
-  const filtered = list.filter(c => c !== city);
-  await AsyncStorage.setItem(KEY, JSON.stringify(filtered));
+  const filtered = list.filter((c) => c !== city);
+  await saveData(KEYS.WEATHER_LOCATIONS, filtered);
   return filtered;
 }

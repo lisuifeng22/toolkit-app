@@ -17,7 +17,7 @@ export async function addTodo(todo: Todo): Promise<void> {
 
 export async function updateTodo(id: string, updates: Partial<Todo>): Promise<void> {
   const todos = await loadTodos();
-  const idx = todos.findIndex(t => t.id === id);
+  const idx = todos.findIndex((t) => t.id === id);
   if (idx !== -1) {
     todos[idx] = { ...todos[idx], ...updates };
     await saveTodos(todos);
@@ -26,12 +26,12 @@ export async function updateTodo(id: string, updates: Partial<Todo>): Promise<vo
 
 export async function deleteTodo(id: string): Promise<void> {
   const todos = await loadTodos();
-  await saveTodos(todos.filter(t => t.id !== id));
+  await saveTodos(todos.filter((t) => t.id !== id));
 }
 
 export async function toggleTodo(id: string): Promise<void> {
   const todos = await loadTodos();
-  const idx = todos.findIndex(t => t.id === id);
+  const idx = todos.findIndex((t) => t.id === id);
   if (idx !== -1) {
     todos[idx] = { ...todos[idx], completed: !todos[idx].completed };
     await saveTodos(todos);

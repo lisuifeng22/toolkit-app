@@ -17,5 +17,5 @@ export async function addAnniversary(item: Anniversary): Promise<void> {
 
 export async function deleteAnniversary(id: string): Promise<void> {
   const items = await loadAnniversaries();
-  await saveAnniversaries(items.filter(a => a.id !== id));
+  await saveAnniversaries(items.filter((a) => a.id !== id));
 }

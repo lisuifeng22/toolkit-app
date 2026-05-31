@@ -17,5 +17,5 @@ export async function addCountdown(item: Countdown): Promise<void> {
 
 export async function deleteCountdown(id: string): Promise<void> {
   const items = await loadCountdowns();
-  await saveCountdowns(items.filter(c => c.id !== id));
+  await saveCountdowns(items.filter((c) => c.id !== id));
 }

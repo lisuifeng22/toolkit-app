@@ -10,15 +10,7 @@ interface CardProps extends TouchableOpacityProps {
 export default function Card({ children, noBackground, style, ...rest }: CardProps) {
   const Component = rest.onPress ? TouchableOpacity : View;
   return (
-    <Component
-      style={[
-        styles.card,
-        noBackground && styles.noBg,
-        style,
-      ]}
-      activeOpacity={0.85}
-      {...rest}
-    >
+    <Component style={[styles.card, noBackground && styles.noBg, style]} activeOpacity={0.85} {...rest}>
       {children}
     </Component>
   );

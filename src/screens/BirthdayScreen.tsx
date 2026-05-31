@@ -13,11 +13,13 @@ export function BirthdayScreen() {
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState(new Date());
 
-  useFocusEffect(useCallback(() => {
-    loadBirthdays().then(data => {
-      setItems(data.map(b => ({ ...b, days: getDaysRemaining(b.birthDate) })).sort((a, b) => a.days - b.days));
-    });
-  }, []));
+  useFocusEffect(
+    useCallback(() => {
+      loadBirthdays().then((data) => {
+        setItems(data.map((b) => ({ ...b, days: getDaysRemaining(b.birthDate) })).sort((a, b) => a.days - b.days));
+      });
+    }, []),
+  );
 
   const handleAdd = async () => {
     if (!name.trim()) {
@@ -28,23 +30,29 @@ export function BirthdayScreen() {
     const m = String(birthDate.getMonth() + 1).padStart(2, '0');
     const d = String(birthDate.getDate()).padStart(2, '0');
     await addBirthday({
-      id: Date.now().toString(), name: name.trim(),
-      birthDate: `${y}-${m}-${d}`, repeatYearly: true,
+      id: Date.now().toString(),
+      name: name.trim(),
+      birthDate: `${y}-${m}-${d}`,
+      repeatYearly: true,
     });
     setName('');
     setBirthDate(new Date());
     setShowAdd(false);
     const data = await loadBirthdays();
-    setItems(data.map(b => ({ ...b, days: getDaysRemaining(b.birthDate) })).sort((a, b) => a.days - b.days));
+    setItems(data.map((b) => ({ ...b, days: getDaysRemaining(b.birthDate) })).sort((a, b) => a.days - b.days));
   };
 
   const handleDelete = (id: string) => {
     Alert.alert('删除', '确定删除吗？', [
       { text: '取消', style: 'cancel' },
-      { text: '删除', style: 'destructive', onPress: async () => {
-        await deleteBirthday(id);
-        setItems(prev => prev.filter(b => b.id !== id));
-      }},
+      {
+        text: '删除',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteBirthday(id);
+          setItems((prev) => prev.filter((b) => b.id !== id));
+        },
+      },
     ]);
   };
 
@@ -69,14 +77,20 @@ export function BirthdayScreen() {
       <FlatList
         data={items}
         renderItem={renderItem}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={items.length === 0 ? styles.empty : styles.list}
         ListEmptyComponent={<Text style={styles.emptyText}>暂无生日记录</Text>}
       />
 
       {showAdd ? (
         <View style={styles.addForm}>
-          <TextInput style={styles.input} placeholder="姓名" placeholderTextColor={Colors.textPlaceholder} value={name} onChangeText={setName} />
+          <TextInput
+            style={styles.input}
+            placeholder="姓名"
+            placeholderTextColor={Colors.textPlaceholder}
+            value={name}
+            onChangeText={setName}
+          />
           <DatePickerField value={birthDate} onChange={setBirthDate} />
           <View style={styles.formBtns}>
             <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowAdd(false)} activeOpacity={0.85}>
@@ -102,7 +116,8 @@ const styles = StyleSheet.create({
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { fontSize: 14, color: Colors.textPlaceholder },
   card: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: Colors.card,
     borderRadius: Layout.radius.large,
     padding: Layout.spacing.md,
@@ -110,9 +125,12 @@ const styles = StyleSheet.create({
     ...Layout.shadow.light,
   },
   avatarCircle: {
-    width: 44, height: 44, borderRadius: 22,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: Colors.primaryLighter,
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: Layout.spacing.md,
   },
   avatarText: { fontSize: 18, fontWeight: '600', color: Colors.primary },
@@ -123,7 +141,10 @@ const styles = StyleSheet.create({
   daysNum: { fontSize: 24, fontWeight: '700', color: Colors.primary },
   daysLabel: { fontSize: 12, color: Colors.textSecondary },
   addForm: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: Colors.card,
     borderTopLeftRadius: Layout.radius.large,
     borderTopRightRadius: Layout.radius.large,
@@ -131,26 +152,40 @@ const styles = StyleSheet.create({
     ...Layout.shadow.hover,
   },
   input: {
-    fontSize: 16, color: Colors.textPrimary,
-    backgroundColor: Colors.gray, borderRadius: Layout.radius.base,
-    padding: Layout.spacing.md, marginBottom: Layout.spacing.sm,
+    fontSize: 16,
+    color: Colors.textPrimary,
+    backgroundColor: Colors.gray,
+    borderRadius: Layout.radius.base,
+    padding: Layout.spacing.md,
+    marginBottom: Layout.spacing.sm,
   },
   formBtns: { flexDirection: 'row', gap: Layout.spacing.md, marginTop: Layout.spacing.sm },
   cancelBtn: {
-    flex: 1, padding: Layout.spacing.md, borderRadius: Layout.radius.base,
-    backgroundColor: Colors.gray, alignItems: 'center',
+    flex: 1,
+    padding: Layout.spacing.md,
+    borderRadius: Layout.radius.base,
+    backgroundColor: Colors.gray,
+    alignItems: 'center',
   },
   cancelText: { color: Colors.textSecondary },
   addBtn: {
-    flex: 1, padding: Layout.spacing.md, borderRadius: Layout.radius.base,
-    backgroundColor: Colors.primary, alignItems: 'center',
+    flex: 1,
+    padding: Layout.spacing.md,
+    borderRadius: Layout.radius.base,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
   },
   addBtnText: { color: '#fff', fontWeight: '600' },
   fab: {
-    position: 'absolute', bottom: 24, right: 24,
-    width: 52, height: 52, borderRadius: 26,
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: Colors.primary,
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
     ...Layout.shadow.hover,
   },
   fabText: { fontSize: 28, color: '#fff', lineHeight: 30 },

@@ -17,5 +17,5 @@ export async function addBirthday(item: Birthday): Promise<void> {
 
 export async function deleteBirthday(id: string): Promise<void> {
   const items = await loadBirthdays();
-  await saveBirthdays(items.filter(b => b.id !== id));
+  await saveBirthdays(items.filter((b) => b.id !== id));
 }

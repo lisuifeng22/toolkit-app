@@ -34,13 +34,13 @@ export function DrawerContent(props: DrawerContentComponentProps) {
             <TouchableOpacity
               key={item.route}
               style={[styles.menuItem, isActive && styles.menuItemActive]}
+              // item.route 是已知的 route name 字面量, 但 TS 无法推导 navigate 参数
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               onPress={() => navigation.navigate(item.route as any)}
               activeOpacity={0.7}
             >
               <Text style={styles.icon}>{item.icon}</Text>
-              <Text style={[styles.menuLabel, isActive && styles.menuLabelActive]}>
-                {item.label}
-              </Text>
+              <Text style={[styles.menuLabel, isActive && styles.menuLabelActive]}>{item.label}</Text>
             </TouchableOpacity>
           );
         })}
@@ -59,9 +59,12 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   avatar: {
-    width: 48, height: 48, borderRadius: 24,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: Layout.spacing.sm,
   },
   avatarText: { color: Colors.sidebarText, fontSize: 20, fontWeight: '700' },
@@ -69,8 +72,10 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 },
   menu: { padding: Layout.spacing.sm, paddingTop: Layout.spacing.md },
   menuItem: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingVertical: 12, paddingHorizontal: Layout.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: Layout.spacing.md,
     borderRadius: Layout.radius.base,
     marginBottom: 2,
   },

@@ -33,7 +33,9 @@ yarn-error.*
 # local env files
 .env*.local
 
-# Gaode API key
+# API Keys
+src/services/gaode-config.ts
+src/config.ts
 
 # typescript
 *.tsbuildinfo

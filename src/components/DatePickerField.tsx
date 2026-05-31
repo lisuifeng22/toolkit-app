@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Colors, Layout } from '../constants/Colors';
 
-let DateTimePicker: any = () => null;
+// 动态加载原生模块, 类型由 @react-native-community/datetimepicker 定义
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let DateTimePicker: React.ComponentType<any> = () => null;
 if (Platform.OS !== 'web') {
   DateTimePicker = require('@react-native-community/datetimepicker').default;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- 原生事件类型无法在纯 TS 环境中精确描述
 type DateTimePickerEvent = any;
 
 type Props = {
@@ -16,7 +19,7 @@ type Props = {
   label?: string;
 };
 
-export function DatePickerField({ value, onChange, mode = 'date', label }: Props) {
+export function DatePickerField({ value, onChange, mode = 'date', label: _label }: Props) {
   const [show, setShow] = useState(false);
 
   const handleChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
@@ -42,10 +45,16 @@ export function DatePickerField({ value, onChange, mode = 'date', label }: Props
             if (val) onChange(new Date(val + 'T00:00:00'));
           }}
           style={{
-            width: '100%', height: 48, borderRadius: Layout.radius.base, padding: 12,
-            fontSize: 16, border: `1px solid ${Colors.border}`,
-            backgroundColor: Colors.card, color: Colors.textPrimary,
-            outline: 'none', boxSizing: 'border-box',
+            width: '100%',
+            height: 48,
+            borderRadius: Layout.radius.base,
+            padding: 12,
+            fontSize: 16,
+            border: `1px solid ${Colors.border}`,
+            backgroundColor: Colors.card,
+            color: Colors.textPrimary,
+            outline: 'none',
+            boxSizing: 'border-box',
           }}
         />
       ) : (
@@ -54,14 +63,7 @@ export function DatePickerField({ value, onChange, mode = 'date', label }: Props
             <Text style={styles.pickerText}>{formatDate(value)}</Text>
             <Text style={styles.pickerIcon}>{mode === 'date' ? '📅' : '⏰'}</Text>
           </TouchableOpacity>
-          {show && (
-            <DateTimePicker
-              value={value}
-              mode={mode}
-              display="default"
-              onChange={handleChange}
-            />
-          )}
+          {show && <DateTimePicker value={value} mode={mode} display="default" onChange={handleChange} />}
         </>
       )}
     </View>
@@ -70,9 +72,13 @@ export function DatePickerField({ value, onChange, mode = 'date', label }: Props
 
 const styles = StyleSheet.create({
   pickerBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: Colors.card, borderRadius: Layout.radius.large,
-    padding: Layout.spacing.md, marginBottom: Layout.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.card,
+    borderRadius: Layout.radius.large,
+    padding: Layout.spacing.md,
+    marginBottom: Layout.spacing.sm,
     ...Layout.shadow.light,
   },
   pickerText: { fontSize: 16, color: Colors.textPrimary },
